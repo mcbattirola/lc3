@@ -58,7 +58,7 @@ pub const LC3 = struct {
             const op: OP = @enumFromInt(instruction >> 12);
             std.debug.print("got instruction {d}!\n", .{op.val()});
             switch (op) {
-                // OP.BR => {},
+                OP.AND => self.andOp(instruction),
                 OP.ADD => self.add(instruction),
                 else => {
                     printRegisters(self.registers);
@@ -96,6 +96,21 @@ pub const LC3 = struct {
         } else {
             const sr2 = instruction & 0b111;
             self.registers[dr], _ = @addWithOverflow(self.registers[sr1], self.registers[sr2]);
+        }
+        self.updateFlags(@enumFromInt(dr));
+    }
+
+    pub fn andOp(self: *LC3, instruction: u16) void {
+        const dr = (instruction >> 9) & 0b111;
+        const sr1 = (instruction >> 6) & 0b111;
+
+        const immediate = (instruction >> 5) & 0b1;
+        if (immediate == 1) {
+            const imm5 = signExtend(instruction & 0b11111, 5);
+            self.registers[dr] = self.registers[sr1] & imm5;
+        } else {
+            const sr2 = instruction & 0b111;
+            self.registers[dr] = self.registers[sr1] & self.registers[sr2];
         }
         self.updateFlags(@enumFromInt(dr));
     }
