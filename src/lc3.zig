@@ -58,11 +58,24 @@ pub const LC3 = struct {
             const op: OP = @enumFromInt(instruction >> 12);
             std.debug.print("got instruction {d}!\n", .{op.val()});
             switch (op) {
-                OP.AND => self.andOp(instruction),
-                OP.ADD => self.add(instruction),
+                OP.BR => self.opBR(instruction),
+                OP.ADD => self.opADD(instruction),
+                OP.LD => self.opLD(instruction),
+                OP.ST => self.opST(instruction),
+                OP.JSR => self.opJSR(instruction),
+                OP.AND => self.opAND(instruction),
+                OP.LDR => self.opLDR(instruction),
+                OP.STR => self.opSTR(instruction),
+                OP.NOT => self.opNOT(instruction),
+                OP.LDI => self.opLDI(instruction),
+                OP.STI => self.opSTI(instruction),
+                OP.JMP => self.opJMP(instruction),
+                OP.LEA => self.opLEA(instruction),
+                OP.TRAP => self.opTRAP(instruction),
                 else => {
                     printRegisters(self.registers);
                     self.running = false;
+                    std.debug.print("unknown instruction {d}, stop\n", .{op.val()});
                 },
             }
         }
@@ -85,7 +98,11 @@ pub const LC3 = struct {
         self.registers[reg_idx.pc.val()] += 1;
     }
 
-    pub fn add(self: *LC3, instruction: u16) void {
+    pub fn opBR(self: *LC3, instruction: u16) void {
+        self.TODO(instruction);
+    }
+
+    pub fn opADD(self: *LC3, instruction: u16) void {
         const dr = (instruction >> 9) & 0b111;
         const sr1 = (instruction >> 6) & 0b111;
 
@@ -100,7 +117,24 @@ pub const LC3 = struct {
         self.updateFlags(@enumFromInt(dr));
     }
 
-    pub fn andOp(self: *LC3, instruction: u16) void {
+    // TODO: tests
+    pub fn opLD(self: *LC3, instruction: u16) void {
+        const dr = (instruction >> 9) & 0b111;
+        const pc_offset = signExtend(instruction & 0x1FF, 9);
+
+        self.registers[dr] = self.readMem(self.registers[reg_idx.pc.val()] + pc_offset);
+        self.updateFlags(@enumFromInt(dr));
+    }
+
+    pub fn opST(self: *LC3, instruction: u16) void {
+        self.TODO(instruction);
+    }
+
+    pub fn opJSR(self: *LC3, instruction: u16) void {
+        self.TODO(instruction);
+    }
+
+    pub fn opAND(self: *LC3, instruction: u16) void {
         const dr = (instruction >> 9) & 0b111;
         const sr1 = (instruction >> 6) & 0b111;
 
@@ -113,6 +147,43 @@ pub const LC3 = struct {
             self.registers[dr] = self.registers[sr1] & self.registers[sr2];
         }
         self.updateFlags(@enumFromInt(dr));
+    }
+
+    pub fn opLDR(self: *LC3, instruction: u16) void {
+        self.TODO(instruction);
+    }
+
+    pub fn opSTR(self: *LC3, instruction: u16) void {
+        self.TODO(instruction);
+    }
+
+    pub fn opNOT(self: *LC3, instruction: u16) void {
+        self.TODO(instruction);
+    }
+
+    // TODO: tests when readMem is implemented
+    pub fn opLDI(self: *LC3, instruction: u16) void {
+        const dr = (instruction >> 9) & 0b111;
+        const pc_offset = signExtend(instruction & 0x1FF, 9);
+
+        self.registers[dr] = self.readMem(self.readMem(self.registers[reg_idx.pc.val()] + pc_offset));
+        self.updateFlags(@enumFromInt(dr));
+    }
+
+    pub fn opSTI(self: *LC3, instruction: u16) void {
+        self.TODO(instruction);
+    }
+
+    pub fn opJMP(self: *LC3, instruction: u16) void {
+        self.TODO(instruction);
+    }
+
+    pub fn opLEA(self: *LC3, instruction: u16) void {
+        self.TODO(instruction);
+    }
+
+    pub fn opTRAP(self: *LC3, instruction: u16) void {
+        self.TODO(instruction);
     }
 
     pub fn updateFlags(self: *LC3, reg: reg_idx) void {
@@ -128,6 +199,14 @@ pub const LC3 = struct {
         }
         // positive
         self.registers[reg_idx.cond.val()] = flag.pos.val();
+    }
+
+    pub fn readMem(self: *LC3, addr: u16) u16 {
+        return self.memory[addr];
+    }
+
+    pub fn TODO(self: *LC3, instruction: u16) void {
+        std.debug.print("TODO - {d}, {any}", .{ instruction, self.running });
     }
 };
 
