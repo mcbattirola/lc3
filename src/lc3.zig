@@ -31,10 +31,14 @@ pub fn newRegisters() Registers {
 }
 
 // condition flags
-const flag = enum(u8) {
+pub const flag = enum(u8) {
     pos = 1 << 0,
     zero = 1 << 1,
     neg = 1 << 2,
+
+    pub fn val(self: flag) u8 {
+        return @intFromEnum(self);
+    }
 };
 
 pub const LC3 = struct {
@@ -93,17 +97,22 @@ pub const LC3 = struct {
             const sr2 = instruction & 0b111;
             self.registers[dr], _ = @addWithOverflow(self.registers[sr1], self.registers[sr2]);
         }
-        // TODO(matheus): update flags
+        self.updateFlags(@enumFromInt(dr));
     }
 
-    // returns the registers, used in tests
-    pub fn getRegisters(self: *LC3) Registers {
-        return self.registers;
-    }
-
-    // sets the registers, used in tests
-    pub fn setRegisters(self: *LC3, r: Registers) void {
-        self.registers = r;
+    pub fn updateFlags(self: *LC3, reg: reg_idx) void {
+        // zero
+        if (self.registers[reg.val()] == 0) {
+            self.registers[reg_idx.cond.val()] = flag.zero.val();
+            return;
+        }
+        // negative
+        if ((self.registers[reg.val()] >> 15) == 1) {
+            self.registers[reg_idx.cond.val()] = flag.neg.val();
+            return;
+        }
+        // positive
+        self.registers[reg_idx.cond.val()] = flag.pos.val();
     }
 };
 

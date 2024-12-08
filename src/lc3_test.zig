@@ -5,13 +5,13 @@ const lc3 = @import("lc3.zig");
 const LC3 = lc3.LC3;
 const Registers = lc3.Registers;
 const reg_idx = lc3.reg_idx;
+const flag = lc3.flag;
 
 test "add op - immediate mode" {
     // TODO(matheus): test table;
     var instruction: u16 = 0;
     var vm: LC3 = undefined;
     var expected: Registers = undefined;
-    var vmr: Registers = undefined;
 
     // dr = r7, sr = 1, imm5 = 3
     instruction = addI(reg_idx.r7, reg_idx.r1, 3);
@@ -19,15 +19,15 @@ test "add op - immediate mode" {
     vm.add(instruction);
     expected = lc3.newRegisters();
     expected[reg_idx.r7.val()] = 3;
-    try expectEqualRegisters(expected, vm.getRegisters());
+    expected[reg_idx.cond.val()] = flag.pos.val();
+    try expectEqualRegisters(expected, vm.registers);
+
     // update r1 value and check again
-    vmr = vm.getRegisters();
-    vmr[reg_idx.r1.val()] = 10;
-    vm.setRegisters(vmr);
+    vm.registers[reg_idx.r1.val()] = 10;
     vm.add(instruction);
     expected[reg_idx.r1.val()] = 10;
     expected[reg_idx.r7.val()] = 13;
-    try expectEqualRegisters(expected, vm.getRegisters());
+    try expectEqualRegisters(expected, vm.registers);
 
     // dr = r0, sr = r2, imm5 = 0
     instruction = addI(reg_idx.r0, reg_idx.r2, 0);
@@ -36,13 +36,12 @@ test "add op - immediate mode" {
     expected = lc3.newRegisters();
     expected[reg_idx.r0.val()] = 0;
     // update r2 and check again
-    vmr = vm.getRegisters();
-    vmr[reg_idx.r2.val()] = 10_000;
-    vm.setRegisters(vmr);
+    vm.registers[reg_idx.r2.val()] = 10_000;
     vm.add(instruction);
     expected[reg_idx.r2.val()] = 10_000;
     expected[reg_idx.r0.val()] = 10_000;
-    try expectEqualRegisters(expected, vm.getRegisters());
+    expected[reg_idx.cond.val()] = flag.pos.val();
+    try expectEqualRegisters(expected, vm.registers);
 
     // dr = r1, sr = r1, imm5 = 5
     instruction = addI(reg_idx.r1, reg_idx.r1, 5);
@@ -50,11 +49,10 @@ test "add op - immediate mode" {
     vm.add(instruction);
     expected = lc3.newRegisters();
     expected[reg_idx.r1.val()] = 65;
-    vmr = vm.getRegisters();
-    vmr[reg_idx.r1.val()] = 60;
-    vm.setRegisters(vmr);
+    vm.registers[reg_idx.r1.val()] = 60;
     vm.add(instruction);
-    try expectEqualRegisters(expected, vm.getRegisters());
+    expected[reg_idx.cond.val()] = flag.pos.val();
+    try expectEqualRegisters(expected, vm.registers);
 
     // dr = r1, sr = r1, imm5 = -1
     instruction = addI(reg_idx.r1, reg_idx.r1, 65535);
@@ -62,13 +60,14 @@ test "add op - immediate mode" {
     vm.add(instruction);
     expected = lc3.newRegisters();
     expected[reg_idx.r1.val()] = 65535; // -1 in two's complement
-    try expectEqualRegisters(expected, vm.getRegisters());
-    vmr = vm.getRegisters();
-    vmr[reg_idx.r1.val()] = 1;
-    vm.setRegisters(vmr);
+    expected[reg_idx.cond.val()] = flag.neg.val();
+    try expectEqualRegisters(expected, vm.registers);
+
+    vm.registers[reg_idx.r1.val()] = 1;
     expected[reg_idx.r1.val()] = 0;
+    expected[reg_idx.cond.val()] = flag.zero.val();
     vm.add(instruction);
-    try expectEqualRegisters(expected, vm.getRegisters());
+    try expectEqualRegisters(expected, vm.registers);
 
     // dr = r1, sr = r1, imm5 = -4
     instruction = addI(reg_idx.r1, reg_idx.r1, 65532);
@@ -76,52 +75,51 @@ test "add op - immediate mode" {
     vm.add(instruction);
     expected = lc3.newRegisters();
     expected[reg_idx.r1.val()] = 65532; // -4 in two's complement
-    try expectEqualRegisters(expected, vm.getRegisters());
-    vmr = vm.getRegisters();
-    vmr[reg_idx.r1.val()] = 128;
-    vm.setRegisters(vmr);
-    expected[reg_idx.r1.val()] = 124;
+    expected[reg_idx.cond.val()] = flag.neg.val();
+
+    try expectEqualRegisters(expected, vm.registers);
+    vm.registers[reg_idx.r1.val()] = 128;
     vm.add(instruction);
-    try expectEqualRegisters(expected, vm.getRegisters());
+    expected[reg_idx.r1.val()] = 124;
+    expected[reg_idx.cond.val()] = flag.pos.val();
+    try expectEqualRegisters(expected, vm.registers);
 }
 
 test "add op - non-immediate mode" {
     var instruction: u16 = 0;
     var vm: LC3 = undefined;
     var expected: Registers = undefined;
-    var vmr: Registers = undefined;
 
     instruction = add(reg_idx.r1, reg_idx.r1, reg_idx.r1);
     vm = LC3{};
     vm.add(instruction);
     expected = lc3.newRegisters();
     expected[reg_idx.r7.val()] = 0;
-    try expectEqualRegisters(expected, vm.getRegisters());
-    // update r1 value and check again
-    vmr = vm.getRegisters();
-    vmr[reg_idx.r1.val()] = 10;
-    vm.setRegisters(vmr);
+    expected[reg_idx.cond.val()] = flag.zero.val();
+    try expectEqualRegisters(expected, vm.registers);
+    vm.registers[reg_idx.r1.val()] = 10;
     vm.add(instruction);
     expected[reg_idx.r1.val()] = 20;
-    try expectEqualRegisters(expected, vm.getRegisters());
+    expected[reg_idx.cond.val()] = flag.pos.val();
+    try expectEqualRegisters(expected, vm.registers);
 
     instruction = add(reg_idx.r1, reg_idx.r2, reg_idx.r3);
     vm = LC3{};
     vm.add(instruction);
     expected = lc3.newRegisters();
     expected[reg_idx.r7.val()] = 0;
-    try expectEqualRegisters(expected, vm.getRegisters());
-    // update registers and check again
-    vmr = vm.getRegisters();
-    vmr[reg_idx.r1.val()] = 10;
-    vmr[reg_idx.r2.val()] = 20;
-    vmr[reg_idx.r3.val()] = 30;
-    vm.setRegisters(vmr);
+    expected[reg_idx.cond.val()] = flag.zero.val();
+    try expectEqualRegisters(expected, vm.registers);
+    vm.registers[reg_idx.r1.val()] = 10;
+    vm.registers[reg_idx.r2.val()] = 20;
+    vm.registers[reg_idx.r3.val()] = 30;
     vm.add(instruction);
     expected[reg_idx.r1.val()] = 50;
     expected[reg_idx.r2.val()] = 20;
     expected[reg_idx.r3.val()] = 30;
-    try expectEqualRegisters(expected, vm.getRegisters());
+    expected[reg_idx.cond.val()] = flag.pos.val();
+    try expectEqualRegisters(expected, vm.registers);
+    try t.expectEqual(@intFromEnum(flag.pos), vm.registers[reg_idx.cond.val()]);
 }
 
 fn expectEqualRegisters(expected: Registers, actual: Registers) !void {
