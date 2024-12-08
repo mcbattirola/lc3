@@ -71,7 +71,7 @@ pub const LC3 = struct {
             self.incrementPC();
             return 0b0001_111_001_1_00011;
         }
-        // TODO: fetch from memory
+        // TODO(matheus): fetch from memory
 
         self.incrementPC();
         return OP.BR.val() << 12;
@@ -87,18 +87,24 @@ pub const LC3 = struct {
 
         const immediate = (instruction >> 5) & 0b1;
         if (immediate == 1) {
-            const imm5 = instruction & 0b11111;
-            self.registers[dr] = self.registers[sr1] + imm5;
-            return;
+            const imm5 = signExtend(instruction & 0b11111, 5);
+            std.debug.print("sum {d} (sr1) + {d} (imm5)\n", .{ self.registers[sr1], imm5 });
+            const sum, _ = @addWithOverflow(self.registers[sr1], imm5);
+            self.registers[dr] = sum;
+        } else {
+            const sr2 = instruction & 0b111;
+            // const sum, _ = @addWithOverflow(self.registers[sr1], imm5); needed? yes!
+            self.registers[dr] = self.registers[sr1] + self.registers[sr2];
         }
-
-        const sr2 = instruction & 0b111;
-        self.registers[dr] = self.registers[sr1] + self.registers[sr2];
+        // TODO(matheus): update flags
     }
-    // returns the registers, used in test
+
+    // returns the registers, used in tests
     pub fn getRegisters(self: *LC3) Registers {
         return self.registers;
     }
+
+    // sets the registers, used in tests
     pub fn setRegisters(self: *LC3, r: Registers) void {
         self.registers = r;
     }
@@ -117,4 +123,27 @@ pub fn printRegisters(registers: Registers) void {
         registers[reg_idx.pc.val()],
         registers[reg_idx.cond.val()],
     });
+}
+
+fn signExtend(val: u16, comptime bit_count: u16) u16 {
+    const sign_bit = 1 << (bit_count - 1);
+    if (val & sign_bit != 0) {
+        return val | @as(u16, @truncate((0xFFFF << bit_count)));
+        // return val | mask;
+    }
+    return val;
+}
+
+test "signExtend" {
+    // Test with a positive value that doesn't need sign extension
+    try std.testing.expectEqual(0, signExtend(0, 5));
+    try std.testing.expectEqual(0b01100, signExtend(0b01100, 5));
+
+    // Test with a negative value (highest bit set) needing sign extension
+    try std.testing.expectEqual(65535, signExtend(0b11111, 5));
+    try std.testing.expectEqual(0xFFFE, signExtend(0b11110, 5));
+
+    // Test with full bit-width (16 bits) - no extension needed
+    try std.testing.expectEqual(0x7FFF, signExtend(0x7FFF, 16));
+    try std.testing.expectEqual(0xFFFF, signExtend(0xFFFF, 16));
 }
