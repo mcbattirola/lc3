@@ -88,13 +88,10 @@ pub const LC3 = struct {
         const immediate = (instruction >> 5) & 0b1;
         if (immediate == 1) {
             const imm5 = signExtend(instruction & 0b11111, 5);
-            std.debug.print("sum {d} (sr1) + {d} (imm5)\n", .{ self.registers[sr1], imm5 });
-            const sum, _ = @addWithOverflow(self.registers[sr1], imm5);
-            self.registers[dr] = sum;
+            self.registers[dr], _ = @addWithOverflow(self.registers[sr1], imm5);
         } else {
             const sr2 = instruction & 0b111;
-            // const sum, _ = @addWithOverflow(self.registers[sr1], imm5); needed? yes!
-            self.registers[dr] = self.registers[sr1] + self.registers[sr2];
+            self.registers[dr], _ = @addWithOverflow(self.registers[sr1], self.registers[sr2]);
         }
         // TODO(matheus): update flags
     }
