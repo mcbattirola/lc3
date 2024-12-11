@@ -17,31 +17,21 @@ test "add" {
     instruction = add(reg_idx.r1, reg_idx.r1, reg_idx.r1);
     vm = LC3{};
     vm.opADD(instruction);
-    expected = lc3.newRegisters();
-    expected[reg_idx.r7.val()] = 0;
-    expected[reg_idx.cond.val()] = flag.zero.val();
+    expected = [_]u16{ 0, 0, 0, 0, 0, 0, 0, 0, 0, flag.zero.val() };
     try expectEqualRegisters(expected, vm.registers);
-    vm.registers[reg_idx.r1.val()] = 10;
+    vm.registers = [_]u16{ 0, 10, 0, 0, 0, 0, 0, 0, 0, flag.pos.val() };
     vm.opADD(instruction);
-    expected[reg_idx.r1.val()] = 20;
-    expected[reg_idx.cond.val()] = flag.pos.val();
+    expected = [_]u16{ 0, 20, 0, 0, 0, 0, 0, 0, 0, flag.pos.val() };
     try expectEqualRegisters(expected, vm.registers);
 
     instruction = add(reg_idx.r1, reg_idx.r2, reg_idx.r3);
     vm = LC3{};
     vm.opADD(instruction);
-    expected = lc3.newRegisters();
-    expected[reg_idx.r7.val()] = 0;
-    expected[reg_idx.cond.val()] = flag.zero.val();
+    expected = [_]u16{ 0, 0, 0, 0, 0, 0, 0, 0, 0, flag.zero.val() };
     try expectEqualRegisters(expected, vm.registers);
-    vm.registers[reg_idx.r1.val()] = 10;
-    vm.registers[reg_idx.r2.val()] = 20;
-    vm.registers[reg_idx.r3.val()] = 30;
+    vm.registers = [_]u16{ 0, 10, 20, 30, 0, 0, 0, 0, 0, flag.pos.val() };
     vm.opADD(instruction);
-    expected[reg_idx.r1.val()] = 50;
-    expected[reg_idx.r2.val()] = 20;
-    expected[reg_idx.r3.val()] = 30;
-    expected[reg_idx.cond.val()] = flag.pos.val();
+    expected = [_]u16{ 0, 50, 20, 30, 0, 0, 0, 0, 0, flag.pos.val() };
     try expectEqualRegisters(expected, vm.registers);
     try t.expectEqual(@intFromEnum(flag.pos), vm.registers[reg_idx.cond.val()]);
 }
@@ -55,41 +45,35 @@ test "add immediate" {
     instruction = addI(reg_idx.r7, reg_idx.r1, 3);
     vm = LC3{};
     vm.opADD(instruction);
-    expected = lc3.newRegisters();
-    expected[reg_idx.r7.val()] = 3;
-    expected[reg_idx.cond.val()] = flag.pos.val();
+    expected = [_]u16{ 0, 0, 0, 0, 0, 0, 0, 3, 0, flag.pos.val() };
     try expectEqualRegisters(expected, vm.registers);
 
     // update r1 value and check again
+    vm.registers = [_]u16{ 0, 10, 0, 0, 0, 0, 0, 0, 0, flag.pos.val() };
     vm.registers[reg_idx.r1.val()] = 10;
     vm.opADD(instruction);
-    expected[reg_idx.r1.val()] = 10;
-    expected[reg_idx.r7.val()] = 13;
+    expected = [_]u16{ 0, 10, 0, 0, 0, 0, 0, 13, 0, flag.pos.val() };
     try expectEqualRegisters(expected, vm.registers);
 
     // dr = r0, sr = r2, imm5 = 0
     instruction = addI(reg_idx.r0, reg_idx.r2, 0);
     vm = LC3{};
     vm.opADD(instruction);
-    expected = lc3.newRegisters();
-    expected[reg_idx.r0.val()] = 0;
+    expected = [_]u16{ 0, 0, 0, 0, 0, 0, 0, 0, 0, flag.pos.val() };
     // update r2 and check again
     vm.registers[reg_idx.r2.val()] = 10_000;
+    vm.registers = [_]u16{ 0, 0, 10_000, 0, 0, 0, 0, 0, 0, flag.pos.val() };
     vm.opADD(instruction);
-    expected[reg_idx.r2.val()] = 10_000;
-    expected[reg_idx.r0.val()] = 10_000;
-    expected[reg_idx.cond.val()] = flag.pos.val();
+    expected = [_]u16{ 10_000, 0, 10_000, 0, 0, 0, 0, 0, 0, flag.pos.val() };
     try expectEqualRegisters(expected, vm.registers);
 
     // dr = r1, sr = r1, imm5 = 5
     instruction = addI(reg_idx.r1, reg_idx.r1, 5);
     vm = LC3{};
     vm.opADD(instruction);
-    expected = lc3.newRegisters();
-    expected[reg_idx.r1.val()] = 65;
-    vm.registers[reg_idx.r1.val()] = 60;
+    expected = [_]u16{ 0, 65, 0, 0, 0, 0, 0, 0, 0, flag.pos.val() };
+    vm.registers = [_]u16{ 0, 60, 0, 0, 0, 0, 0, 0, 0, flag.pos.val() };
     vm.opADD(instruction);
-    expected[reg_idx.cond.val()] = flag.pos.val();
     try expectEqualRegisters(expected, vm.registers);
 
     // dr = r1, sr = r1, imm5 = -1
@@ -97,13 +81,13 @@ test "add immediate" {
     vm = LC3{};
     vm.opADD(instruction);
     expected = lc3.newRegisters();
-    expected[reg_idx.r1.val()] = 65535; // -1 in two's complement
-    expected[reg_idx.cond.val()] = flag.neg.val();
+    // -1 in two's complement
+    expected = [_]u16{ 0, 65535, 0, 0, 0, 0, 0, 0, 0, flag.neg.val() };
     try expectEqualRegisters(expected, vm.registers);
 
     vm.registers[reg_idx.r1.val()] = 1;
-    expected[reg_idx.r1.val()] = 0;
-    expected[reg_idx.cond.val()] = flag.zero.val();
+    vm.registers = [_]u16{ 0, 1, 0, 0, 0, 0, 0, 0, 0, flag.pos.val() };
+    expected = [_]u16{ 0, 0, 0, 0, 0, 0, 0, 0, 0, flag.zero.val() };
     vm.opADD(instruction);
     try expectEqualRegisters(expected, vm.registers);
 
@@ -111,15 +95,12 @@ test "add immediate" {
     instruction = addI(reg_idx.r1, reg_idx.r1, 65532);
     vm = LC3{};
     vm.opADD(instruction);
-    expected = lc3.newRegisters();
-    expected[reg_idx.r1.val()] = 65532; // -4 in two's complement
-    expected[reg_idx.cond.val()] = flag.neg.val();
-
+    expected = [_]u16{ 0, 65532, 0, 0, 0, 0, 0, 0, 0, flag.neg.val() };
     try expectEqualRegisters(expected, vm.registers);
+
     vm.registers[reg_idx.r1.val()] = 128;
     vm.opADD(instruction);
-    expected[reg_idx.r1.val()] = 124;
-    expected[reg_idx.cond.val()] = flag.pos.val();
+    expected = [_]u16{ 0, 124, 0, 0, 0, 0, 0, 0, 0, flag.pos.val() };
     try expectEqualRegisters(expected, vm.registers);
 }
 
@@ -131,14 +112,11 @@ test "and" {
     instruction = andNonImm(reg_idx.r1, reg_idx.r1, reg_idx.r1);
     vm = LC3{};
     vm.opAND(instruction);
-    expected = lc3.newRegisters();
-    expected[reg_idx.r1.val()] = 0;
-    expected[reg_idx.cond.val()] = flag.zero.val();
+    expected = [_]u16{ 0, 0, 0, 0, 0, 0, 0, 0, 0, flag.zero.val() };
     try expectEqualRegisters(expected, vm.registers);
     vm.registers[reg_idx.r1.val()] = 20;
     vm.opAND(instruction);
-    expected[reg_idx.r1.val()] = 20;
-    expected[reg_idx.cond.val()] = flag.pos.val();
+    expected = [_]u16{ 0, 20, 0, 0, 0, 0, 0, 0, 0, flag.pos.val() };
     try expectEqualRegisters(expected, vm.registers);
 
     instruction = andNonImm(reg_idx.r2, reg_idx.r3, reg_idx.r4);
@@ -146,11 +124,7 @@ test "and" {
     vm.registers[reg_idx.r3.val()] = 0b00001111;
     vm.registers[reg_idx.r4.val()] = 0b11111111;
     vm.opAND(instruction);
-    expected = lc3.newRegisters();
-    expected[reg_idx.r2.val()] = 0b00001111;
-    expected[reg_idx.r3.val()] = 0b00001111;
-    expected[reg_idx.r4.val()] = 0b11111111;
-    expected[reg_idx.cond.val()] = flag.pos.val();
+    expected = [_]u16{ 0, 0, 0b00001111, 0b00001111, 0b11111111, 0, 0, 0, 0, flag.pos.val() };
     try expectEqualRegisters(expected, vm.registers);
 }
 
@@ -162,25 +136,19 @@ test "and immediate" {
     instruction = andI(reg_idx.r1, reg_idx.r1, 65535);
     vm = LC3{};
     vm.opAND(instruction);
-    expected = lc3.newRegisters();
-    expected[reg_idx.r1.val()] = 0;
-    expected[reg_idx.cond.val()] = flag.zero.val();
+    expected = [_]u16{ 0, 0, 0, 0, 0, 0, 0, 0, 0, flag.zero.val() };
     try expectEqualRegisters(expected, vm.registers);
 
     vm.registers[reg_idx.r1.val()] = 65535;
-    expected[reg_idx.r1.val()] = 65535;
-    expected[reg_idx.cond.val()] = flag.neg.val();
     vm.opAND(instruction);
+    expected = [_]u16{ 0, 65535, 0, 0, 0, 0, 0, 0, 0, flag.neg.val() };
     try expectEqualRegisters(expected, vm.registers);
 
     instruction = andI(reg_idx.r2, reg_idx.r3, 5);
     vm = LC3{};
-    expected = lc3.newRegisters();
     vm.registers[reg_idx.r3.val()] = 1;
-    expected[reg_idx.r2.val()] = 1;
-    expected[reg_idx.r3.val()] = 1;
-    expected[reg_idx.cond.val()] = flag.pos.val();
     vm.opAND(instruction);
+    expected = [_]u16{ 0, 0, 1, 1, 0, 0, 0, 0, 0, flag.pos.val() };
     try expectEqualRegisters(expected, vm.registers);
 }
 
