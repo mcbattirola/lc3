@@ -99,7 +99,11 @@ pub const LC3 = struct {
     }
 
     pub fn opBR(self: *LC3, instruction: u16) void {
-        self.TODO(instruction);
+        const offset = signExtend(instruction & 0x1FF, 9);
+        const cond_flag = (instruction >> 9) & 0b111;
+        if ((cond_flag & self.registers[reg_idx.cond.val()] != 0)) {
+            self.registers[reg_idx.pc.val()] += offset;
+        }
     }
 
     pub fn opADD(self: *LC3, instruction: u16) void {

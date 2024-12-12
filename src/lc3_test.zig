@@ -152,6 +152,42 @@ test "and immediate" {
     try expectEqualRegisters(expected, vm.registers);
 }
 
+test "br" {
+    var instruction: u16 = 0b0000_100_000000000;
+    var vm: LC3 = undefined;
+    var expected: Registers = undefined;
+
+    vm = LC3{};
+    vm.opBR(instruction);
+    expected = [_]u16{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    try expectEqualRegisters(expected, vm.registers);
+
+    // check n, offset = 3
+    instruction = 0b0000_100_000000011;
+    vm.registers = [_]u16{ 0, 0, 0, 0, 0, 0, 0, 0, 0, flag.neg.val() };
+    vm.opBR(instruction);
+    expected = [_]u16{ 0, 0, 0, 0, 0, 0, 0, 0, 3, flag.neg.val() };
+    try expectEqualRegisters(expected, vm.registers);
+
+    vm.opBR(instruction);
+    expected = [_]u16{ 0, 0, 0, 0, 0, 0, 0, 0, 6, flag.neg.val() };
+    try expectEqualRegisters(expected, vm.registers);
+
+    // check z, offset = 5
+    instruction = 0b0000_010_000000101;
+    vm.registers = [_]u16{ 0, 0, 0, 0, 0, 0, 0, 0, 0, flag.zero.val() };
+    vm.opBR(instruction);
+    expected = [_]u16{ 0, 0, 0, 0, 0, 0, 0, 0, 5, flag.zero.val() };
+    try expectEqualRegisters(expected, vm.registers);
+
+    // check p, offset = 16
+    instruction = 0b0000_010_000010000;
+    vm.registers = [_]u16{ 0, 0, 0, 0, 0, 0, 0, 0, 0, flag.zero.val() };
+    vm.opBR(instruction);
+    expected = [_]u16{ 0, 0, 0, 0, 0, 0, 0, 0, 16, flag.zero.val() };
+    try expectEqualRegisters(expected, vm.registers);
+}
+
 fn expectEqualRegisters(expected: Registers, actual: Registers) !void {
     for (expected, 0..) |_, i| {
         try t.expectEqual(expected[i], actual[i]);
