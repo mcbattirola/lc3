@@ -99,10 +99,10 @@ pub const LC3 = struct {
     }
 
     pub fn opBR(self: *LC3, instruction: u16) void {
-        const offset = signExtend(instruction & 0x1FF, 9);
+        const pc_offset = signExtend(instruction & 0x1FF, 9);
         const cond_flag = (instruction >> 9) & 0b111;
         if ((cond_flag & self.registers[reg_idx.cond.val()] != 0)) {
-            self.registers[reg_idx.pc.val()] += offset;
+            self.registers[reg_idx.pc.val()] += pc_offset;
         }
     }
 
@@ -135,7 +135,18 @@ pub const LC3 = struct {
     }
 
     pub fn opJSR(self: *LC3, instruction: u16) void {
-        self.TODO(instruction);
+        // store PC in r7
+        self.registers[reg_idx.r7.val()] = self.registers[reg_idx.pc.val()];
+
+        if ((instruction >> 11) & 1 == 1) {
+            // JSR
+            const pc_offset = signExtend(instruction & 0x1FF, 11);
+            self.registers[reg_idx.pc.val()] += pc_offset;
+        } else {
+            // JSSR
+            const base = (instruction >> 6) & 0x7;
+            self.registers[reg_idx.pc.val()] = base;
+        }
     }
 
     pub fn opAND(self: *LC3, instruction: u16) void {
@@ -179,7 +190,9 @@ pub const LC3 = struct {
     }
 
     pub fn opJMP(self: *LC3, instruction: u16) void {
-        self.TODO(instruction);
+        // also handles RET since 'base' will be 7
+        const base = (instruction >> 6) & 0x7;
+        self.registers[reg_idx.pc.val()] = base;
     }
 
     pub fn opLEA(self: *LC3, instruction: u16) void {

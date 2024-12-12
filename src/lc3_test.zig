@@ -188,6 +188,40 @@ test "br" {
     try expectEqualRegisters(expected, vm.registers);
 }
 
+test "jsr" {
+    var instruction: u16 = 0b0100_1_00000000001;
+    var vm: LC3 = LC3{};
+    var expected: Registers = undefined;
+
+    vm.registers = [_]u16{ 0, 0, 0, 0, 0, 0, 0, 0, 0xFE, 0 };
+    vm.opJSR(instruction);
+    expected = [_]u16{ 0, 0, 0, 0, 0, 0, 0, 0xFE, 0xFF, 0 };
+    try expectEqualRegisters(expected, vm.registers);
+
+    instruction = 0b0100_1_00000001111;
+    vm.registers = [_]u16{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    vm.opJSR(instruction);
+    expected = [_]u16{ 0, 0, 0, 0, 0, 0, 0, 0, 0b1111, 0 };
+    try expectEqualRegisters(expected, vm.registers);
+}
+
+test "jssr" {
+    var instruction: u16 = 0b0100_0_00_111_000000;
+    var vm: LC3 = LC3{};
+    var expected: Registers = undefined;
+
+    vm.registers = [_]u16{ 0, 0, 0, 0, 0, 0, 0, 0, 0xFE, 0 };
+    vm.opJSR(instruction);
+    expected = [_]u16{ 0, 0, 0, 0, 0, 0, 0, 0xFE, 0b111, 0 };
+    try expectEqualRegisters(expected, vm.registers);
+
+    instruction = 0b0100_0_00_101_000000;
+    vm.registers = [_]u16{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    vm.opJSR(instruction);
+    expected = [_]u16{ 0, 0, 0, 0, 0, 0, 0, 0, 0b101, 0 };
+    try expectEqualRegisters(expected, vm.registers);
+}
+
 fn expectEqualRegisters(expected: Registers, actual: Registers) !void {
     for (expected, 0..) |_, i| {
         try t.expectEqual(expected[i], actual[i]);
