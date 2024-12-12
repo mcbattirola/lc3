@@ -164,8 +164,14 @@ pub const LC3 = struct {
         self.updateFlags(@enumFromInt(dr));
     }
 
+    // TODO: tests
     pub fn opLDR(self: *LC3, instruction: u16) void {
-        self.TODO(instruction);
+        const dr = (instruction >> 9) & 0x7;
+        const base = (instruction >> 6) & 0x7;
+        const offset = signExtend(instruction & 0x3F, 6);
+
+        self.registers[dr] = self.readMem(self.registers[base] + offset);
+        self.updateFlags(@enumFromInt(dr));
     }
 
     pub fn opSTR(self: *LC3, instruction: u16) void {
