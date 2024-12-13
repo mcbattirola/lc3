@@ -130,8 +130,12 @@ pub const LC3 = struct {
         self.updateFlags(@enumFromInt(dr));
     }
 
+    // TODO: test
     pub fn opST(self: *LC3, instruction: u16) void {
-        self.TODO(instruction);
+        const sr = (instruction >> 9) & 0b111;
+        const pc_offset = signExtend(instruction & 0x1FF, 9);
+        // mem[pc + offset] = sr
+        self.writeMem(self.registers[reg_idx.pc.val() + pc_offset], self.registers[sr]);
     }
 
     pub fn opJSR(self: *LC3, instruction: u16) void {
@@ -194,8 +198,12 @@ pub const LC3 = struct {
         self.updateFlags(@enumFromInt(dr));
     }
 
+    // TODO: test
     pub fn opSTI(self: *LC3, instruction: u16) void {
-        self.TODO(instruction);
+        const sr = (instruction >> 9) & 0b111;
+        const pc_offset = signExtend(instruction & 0x1FF, 9);
+        // mem[mem[pc + offset]] = sr
+        self.writeMem(self.readMem(self.registers[reg_idx.pc.val() + pc_offset]), self.registers[sr]);
     }
 
     pub fn opJMP(self: *LC3, instruction: u16) void {
@@ -233,6 +241,10 @@ pub const LC3 = struct {
 
     pub fn readMem(self: *LC3, addr: u16) u16 {
         return self.memory[addr];
+    }
+
+    pub fn writeMem(self: *LC3, addr: u16, val: u16) void {
+        self.memory[addr] = val;
     }
 
     pub fn TODO(self: *LC3, instruction: u16) void {
