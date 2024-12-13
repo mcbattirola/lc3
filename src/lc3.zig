@@ -178,8 +178,13 @@ pub const LC3 = struct {
         self.updateFlags(@enumFromInt(dr));
     }
 
+    // TODO: tests
     pub fn opSTR(self: *LC3, instruction: u16) void {
-        self.TODO(instruction);
+        const sr = (instruction >> 9) & 0x7;
+        const base = (instruction >> 6) & 0x7;
+        const offset = signExtend(instruction & 0x3F, 6);
+
+        self.writeMem(base + offset, self.registers[sr]);
     }
 
     pub fn opNOT(self: *LC3, instruction: u16) void {
