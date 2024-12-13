@@ -100,22 +100,22 @@ pub const LC3 = struct {
 
     pub fn opBR(self: *LC3, instruction: u16) void {
         const pc_offset = signExtend(instruction & 0x1FF, 9);
-        const cond_flag = (instruction >> 9) & 0b111;
+        const cond_flag = (instruction >> 9) & 0x7;
         if ((cond_flag & self.registers[reg_idx.cond.val()] != 0)) {
             self.registers[reg_idx.pc.val()] += pc_offset;
         }
     }
 
     pub fn opADD(self: *LC3, instruction: u16) void {
-        const dr = (instruction >> 9) & 0b111;
-        const sr1 = (instruction >> 6) & 0b111;
+        const dr = (instruction >> 9) & 0x7;
+        const sr1 = (instruction >> 6) & 0x7;
 
-        const immediate = (instruction >> 5) & 0b1;
+        const immediate = (instruction >> 5) & 1;
         if (immediate == 1) {
-            const imm5 = signExtend(instruction & 0b11111, 5);
+            const imm5 = signExtend(instruction & 0x1F, 5);
             self.registers[dr], _ = @addWithOverflow(self.registers[sr1], imm5);
         } else {
-            const sr2 = instruction & 0b111;
+            const sr2 = instruction & 0x7;
             self.registers[dr], _ = @addWithOverflow(self.registers[sr1], self.registers[sr2]);
         }
         self.updateFlags(@enumFromInt(dr));
@@ -123,7 +123,7 @@ pub const LC3 = struct {
 
     // TODO: tests
     pub fn opLD(self: *LC3, instruction: u16) void {
-        const dr = (instruction >> 9) & 0b111;
+        const dr = (instruction >> 9) & 0x7;
         const pc_offset = signExtend(instruction & 0x1FF, 9);
 
         self.registers[dr] = self.readMem(self.registers[reg_idx.pc.val()] + pc_offset);
@@ -132,7 +132,7 @@ pub const LC3 = struct {
 
     // TODO: test
     pub fn opST(self: *LC3, instruction: u16) void {
-        const sr = (instruction >> 9) & 0b111;
+        const sr = (instruction >> 9) & 0x7;
         const pc_offset = signExtend(instruction & 0x1FF, 9);
         // mem[pc + offset] = sr
         self.writeMem(self.registers[reg_idx.pc.val() + pc_offset], self.registers[sr]);
@@ -154,15 +154,15 @@ pub const LC3 = struct {
     }
 
     pub fn opAND(self: *LC3, instruction: u16) void {
-        const dr = (instruction >> 9) & 0b111;
-        const sr1 = (instruction >> 6) & 0b111;
+        const dr = (instruction >> 9) & 0x7;
+        const sr1 = (instruction >> 6) & 0x7;
 
-        const immediate = (instruction >> 5) & 0b1;
+        const immediate = (instruction >> 5) & 1;
         if (immediate == 1) {
-            const imm5 = signExtend(instruction & 0b11111, 5);
+            const imm5 = signExtend(instruction & 0x1F, 5);
             self.registers[dr] = self.registers[sr1] & imm5;
         } else {
-            const sr2 = instruction & 0b111;
+            const sr2 = instruction & 0x7;
             self.registers[dr] = self.registers[sr1] & self.registers[sr2];
         }
         self.updateFlags(@enumFromInt(dr));
@@ -188,15 +188,15 @@ pub const LC3 = struct {
     }
 
     pub fn opNOT(self: *LC3, instruction: u16) void {
-        const dr = (instruction >> 9) & 0b111;
-        const sr = (instruction >> 6) & 0b111;
+        const dr = (instruction >> 9) & 0x7;
+        const sr = (instruction >> 6) & 0x7;
         self.registers[dr] = ~self.registers[sr];
         self.updateFlags(@enumFromInt(dr));
     }
 
     // TODO: tests when readMem is implemented
     pub fn opLDI(self: *LC3, instruction: u16) void {
-        const dr = (instruction >> 9) & 0b111;
+        const dr = (instruction >> 9) & 0x7;
         const pc_offset = signExtend(instruction & 0x1FF, 9);
 
         self.registers[dr] = self.readMem(self.readMem(self.registers[reg_idx.pc.val()] + pc_offset));
@@ -205,7 +205,7 @@ pub const LC3 = struct {
 
     // TODO: test
     pub fn opSTI(self: *LC3, instruction: u16) void {
-        const sr = (instruction >> 9) & 0b111;
+        const sr = (instruction >> 9) & 0x7;
         const pc_offset = signExtend(instruction & 0x1FF, 9);
         // mem[mem[pc + offset]] = sr
         self.writeMem(self.readMem(self.registers[reg_idx.pc.val() + pc_offset]), self.registers[sr]);
@@ -219,7 +219,7 @@ pub const LC3 = struct {
 
     // TODO: tests
     pub fn opLEA(self: *LC3, instruction: u16) void {
-        const dr = (instruction >> 9) & 0b111;
+        const dr = (instruction >> 9) & 0x7;
         const pc_offset = signExtend(instruction & 0x1FF, 9);
         self.registers[dr] = self.registers[reg_idx.pc.val()] + pc_offset;
         self.updateFlags(@enumFromInt(dr));
