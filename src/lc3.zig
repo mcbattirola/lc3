@@ -41,6 +41,12 @@ pub const flag = enum(u8) {
     }
 };
 
+// memory-mapped registers
+const mmr = enum(u16) {
+    kbstatus = 0xFE00,
+    kbdata = 0xFE02,
+};
+
 pub const LC3 = struct {
     memory: [MEMORY_SIZE]u16 = undefined,
     registers: Registers = newRegisters(),
@@ -244,10 +250,22 @@ pub const LC3 = struct {
         self.registers[reg_idx.cond.val()] = flag.pos.val();
     }
 
+    // TODO: tests
     pub fn readMem(self: *LC3, addr: u16) u16 {
+        if (addr == mmr.kbstatus) {
+            // if key pressed
+            if (true) {
+                self.memory[mmr.kbstatus] = 1 << 15;
+                self.memory[mmr.kbdata] = 1; // TODO: value of key pressed
+            } else {
+                self.memory[mmr.kbstatus] = 0;
+            }
+        }
+
         return self.memory[addr];
     }
 
+    // TODO: tests
     pub fn writeMem(self: *LC3, addr: u16, val: u16) void {
         self.memory[addr] = val;
     }
