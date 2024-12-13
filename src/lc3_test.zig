@@ -6,8 +6,7 @@ const LC3 = lc3.LC3;
 const Registers = lc3.Registers;
 const reg_idx = lc3.reg_idx;
 const flag = lc3.flag;
-
-// TODO(matheus): test tables
+const MEMORY_SIZE = lc3.MEMORY_SIZE;
 
 test "add" {
     var instruction: u16 = 0;
@@ -239,6 +238,29 @@ test "not" {
     vm.opNOT(instruction);
     expected = [_]u16{ 0x0FFF, 0xF000, 0, 0, 0, 0, 0, 0, 0, flag.neg.val() };
     try expectEqualRegisters(expected, vm.registers);
+}
+
+test "st" {
+    // sr = r0, offset = 10
+    const instruction: u16 = 0b0011_000_000001010;
+    var vm: LC3 = LC3{};
+
+    vm.registers[reg_idx.pc.val()] = 2;
+    vm.registers[reg_idx.r0.val()] = 4;
+    vm.opST(instruction);
+    // mem 12 (pc + offset) should be 4 (r0)
+    try t.expectEqual(4, vm.memory[12]);
+}
+
+test "str" {
+    // sr = r4, base = 3, offset = 10
+    const instruction: u16 = 0b0111_100_011_001010;
+    var vm: LC3 = LC3{};
+
+    vm.registers[reg_idx.r4.val()] = 5;
+    vm.opSTR(instruction);
+    // mem 13 (base + offset) should be 5 (r4)
+    try t.expectEqual(5, vm.memory[13]);
 }
 
 fn expectEqualRegisters(expected: Registers, actual: Registers) !void {

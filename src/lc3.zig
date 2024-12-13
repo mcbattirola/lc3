@@ -2,7 +2,7 @@ const std = @import("std");
 const OP = @import("op.zig").OP;
 
 // 65536 memory locations
-const MEMORY_SIZE = 1 << 16;
+pub const MEMORY_SIZE = 1 << 16;
 const PC_START = 0x3000;
 
 // register indexes
@@ -136,12 +136,11 @@ pub const LC3 = struct {
         self.updateFlags(@enumFromInt(dr));
     }
 
-    // TODO: test
     pub fn opST(self: *LC3, instruction: u16) void {
         const sr = (instruction >> 9) & 0x7;
         const pc_offset = signExtend(instruction & 0x1FF, 9);
         // mem[pc + offset] = sr
-        self.writeMem(self.registers[reg_idx.pc.val() + pc_offset], self.registers[sr]);
+        self.writeMem(self.registers[reg_idx.pc.val()] + pc_offset, self.registers[sr]);
     }
 
     pub fn opJSR(self: *LC3, instruction: u16) void {
@@ -184,7 +183,6 @@ pub const LC3 = struct {
         self.updateFlags(@enumFromInt(dr));
     }
 
-    // TODO: tests
     pub fn opSTR(self: *LC3, instruction: u16) void {
         const sr = (instruction >> 9) & 0x7;
         const base = (instruction >> 6) & 0x7;
@@ -265,7 +263,6 @@ pub const LC3 = struct {
         return self.memory[addr];
     }
 
-    // TODO: tests
     pub fn writeMem(self: *LC3, addr: u16, val: u16) void {
         self.memory[addr] = val;
     }
