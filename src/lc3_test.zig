@@ -222,6 +222,25 @@ test "jssr" {
     try expectEqualRegisters(expected, vm.registers);
 }
 
+test "not" {
+    // dr = r0, sr = r1
+    var instruction: u16 = 0b1001_000_001_111111;
+    var vm: LC3 = LC3{};
+    var expected: Registers = undefined;
+
+    vm.registers = [_]u16{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    vm.opNOT(instruction);
+    expected = [_]u16{ 0xFFFF, 0, 0, 0, 0, 0, 0, 0, 0, flag.neg.val() };
+    try expectEqualRegisters(expected, vm.registers);
+
+    // dr = r1, sr = r0
+    instruction = 0b1001_001_000_111111;
+    vm.registers = [_]u16{ 0x0FFF, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    vm.opNOT(instruction);
+    expected = [_]u16{ 0x0FFF, 0xF000, 0, 0, 0, 0, 0, 0, 0, flag.neg.val() };
+    try expectEqualRegisters(expected, vm.registers);
+}
+
 fn expectEqualRegisters(expected: Registers, actual: Registers) !void {
     for (expected, 0..) |_, i| {
         try t.expectEqual(expected[i], actual[i]);

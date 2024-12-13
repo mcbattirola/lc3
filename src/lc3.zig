@@ -179,7 +179,10 @@ pub const LC3 = struct {
     }
 
     pub fn opNOT(self: *LC3, instruction: u16) void {
-        self.TODO(instruction);
+        const dr = (instruction >> 9) & 0b111;
+        const sr = (instruction >> 6) & 0b111;
+        self.registers[dr] = ~self.registers[sr];
+        self.updateFlags(@enumFromInt(dr));
     }
 
     // TODO: tests when readMem is implemented
@@ -201,8 +204,12 @@ pub const LC3 = struct {
         self.registers[reg_idx.pc.val()] = base;
     }
 
+    // TODO: tests
     pub fn opLEA(self: *LC3, instruction: u16) void {
-        self.TODO(instruction);
+        const dr = (instruction >> 9) & 0b111;
+        const pc_offset = signExtend(instruction & 0x1FF, 9);
+        self.registers[dr] = self.registers[reg_idx.pc.val()] + pc_offset;
+        self.updateFlags(@enumFromInt(dr));
     }
 
     pub fn opTRAP(self: *LC3, instruction: u16) void {
