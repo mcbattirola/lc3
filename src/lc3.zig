@@ -47,6 +47,15 @@ const mmr = enum(u16) {
     kbdata = 0xFE02,
 };
 
+pub const trap = enum(u16) {
+    getc = 0x20, // get character from keyboard, not echoed onto the terminal
+    out = 0x21, // output a character
+    puts = 0x22, // output a word string
+    in = 0x23, // get character from keyboard, echoed onto the terminal
+    putsp = 0x24, // output a byte string
+    halt = 0x25, // halt the program
+};
+
 pub const LC3 = struct {
     memory: [MEMORY_SIZE]u16 = undefined,
     registers: Registers = newRegisters(),

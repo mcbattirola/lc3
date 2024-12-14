@@ -9,3 +9,4 @@
   - [ ] read-related
 - [ ] CLI
   - [ ] read file
+- [ ] GUI
