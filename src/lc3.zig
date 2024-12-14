@@ -102,15 +102,10 @@ pub const LC3 = struct {
 
     // returns an instruction from memory and increments pc
     pub fn fetch(self: *LC3) u16 {
-        if (self.registers[reg_idx.pc.val()] == PC_START) {
-            std.debug.print("return ADD\n", .{});
-            self.incrementPC();
-            return 0b0001_111_001_1_00011;
-        }
-        // TODO(matheus): fetch from memory
-
+        const instruction = self.readMem(self.registers[reg_idx.pc.val()]);
+        std.debug.print("instruction: {d}\n", .{instruction});
         self.incrementPC();
-        return OP.BR.val() << 12;
+        return instruction;
     }
 
     pub fn incrementPC(self: *LC3) void {
