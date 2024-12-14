@@ -45,6 +45,10 @@ pub const flag = enum(u8) {
 const mmr = enum(u16) {
     kbstatus = 0xFE00,
     kbdata = 0xFE02,
+
+    pub fn val(self: mmr) u16 {
+        return @intFromEnum(self);
+    }
 };
 
 pub const trap = enum(u16) {
@@ -71,7 +75,7 @@ pub const LC3 = struct {
         while (self.running) {
             const instruction = self.fetch();
             const op: OP = @enumFromInt(instruction >> 12);
-            std.debug.print("got instruction {d}!\n", .{op.val()});
+            // std.debug.print("got instruction {d}!\n", .{op.val()});
             switch (op) {
                 OP.BR => self.opBR(instruction),
                 OP.ADD => self.opADD(instruction),
@@ -259,13 +263,13 @@ pub const LC3 = struct {
 
     // TODO: tests
     pub fn readMem(self: *LC3, addr: u16) u16 {
-        if (addr == mmr.kbstatus) {
+        if (addr == mmr.kbstatus.val()) {
             // if key pressed
             if (true) {
-                self.memory[mmr.kbstatus] = 1 << 15;
-                self.memory[mmr.kbdata] = 1; // TODO: value of key pressed
+                self.memory[mmr.kbstatus.val()] = 1 << 15;
+                self.memory[mmr.kbdata.val()] = 1; // TODO: value of key pressed
             } else {
-                self.memory[mmr.kbstatus] = 0;
+                self.memory[mmr.kbstatus.val()] = 0;
             }
         }
 
