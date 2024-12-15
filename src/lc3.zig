@@ -294,7 +294,8 @@ pub const LC3 = struct {
                 self.TODO(instruction);
             },
             trap.halt => {
-                self.TODO(instruction);
+                std.debug.print("HALT", .{});
+                self.running = false;
             },
         }
     }
