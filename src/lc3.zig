@@ -234,13 +234,22 @@ pub const LC3 = struct {
         self.updateFlags(@enumFromInt(dr));
     }
 
+    // TODO: tests
     pub fn opTRAP(self: *LC3, instruction: u16) void {
         self.registers[reg_idx.r7.val()] = self.registers[reg_idx.pc.val()];
 
         const trap_code: trap = @enumFromInt(instruction & 0xFF);
         switch (trap_code) {
             trap.getc => {
-                self.TODO(instruction);
+                // Read a single character from the keyboard. The character is not echoed onto the
+                // console. Its ASCII code is copied into R0. The high eight bits of R0 are cleared
+                const r0 = reg_idx.r0;
+                var buf: [1]u8 = undefined;
+                _ = std.io.getStdIn().reader().readAll(&buf) catch unreachable;
+
+                self.registers[r0.val()] = buf[0];
+                self.updateFlags(r0);
+                // TODO: disable terminal line buffering
             },
             trap.out => {
                 self.TODO(instruction);
