@@ -1,7 +1,6 @@
 const std = @import("std");
 const OP = @import("op.zig").OP;
 
-// 65536 memory locations
 pub const MEMORY_SIZE = 1 << 16;
 const PC_START = 0x3000;
 
@@ -23,7 +22,8 @@ pub const reg_idx = enum(usize) {
     }
 };
 
-pub const Registers = [10]u16;
+const REGCOUNT = reg_idx.cond.val() + 1;
+pub const Registers = [REGCOUNT]u16;
 pub fn newRegisters() Registers {
     var r: Registers = undefined;
     @memset(&r, 0);
@@ -67,11 +67,8 @@ pub const LC3 = struct {
     running: bool = true,
 
     pub fn run(self: *LC3) void {
-        const qty = 10;
-        self.memory[qty - 1] = 10;
-        std.debug.print("First {d} bytes: {any}!\n", .{ qty, self.memory[0..qty] });
-
         self.registers[reg_idx.pc.val()] = PC_START;
+
         while (self.running) {
             const instruction = self.fetch();
             const op: OP = @enumFromInt(instruction >> 12);
