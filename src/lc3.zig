@@ -75,7 +75,7 @@ pub const LC3 = struct {
         while (self.running) {
             const instruction = self.fetch();
             const op: OP = @enumFromInt(instruction >> 12);
-            // std.debug.print("got instruction {d}!\n", .{op.val()});
+
             switch (op) {
                 OP.BR => self.opBR(instruction),
                 OP.ADD => self.opADD(instruction),
@@ -238,7 +238,42 @@ pub const LC3 = struct {
     }
 
     pub fn opTRAP(self: *LC3, instruction: u16) void {
-        self.TODO(instruction);
+        const trap_code: trap = @enumFromInt(instruction & 0xFF);
+        switch (trap_code) {
+            trap.getc => {
+                self.TODO(instruction);
+            },
+            trap.out => {
+                self.TODO(instruction);
+            },
+            trap.puts => {
+                // Write a string of ASCII characters to the console display.
+                // The characters are contained in consecutive memory locations,
+                // one character per memory location, starting with the address specified in R0.
+                // Writing terminates with the occurrence of x0000 in a memory location.
+
+                // each character is stores in a memory location (not a byte),
+                // so the characters are 16 bits.
+
+                var addr: u16 = self.registers[reg_idx.r0.val()];
+                var c: u8 = @truncate(self.readMem(addr));
+                var w = std.io.getStdOut().writer();
+                while (c != 0) {
+                    w.print("{c}", .{c}) catch unreachable;
+                    addr += 1;
+                    c = @truncate(self.readMem(addr));
+                }
+            },
+            trap.in => {
+                self.TODO(instruction);
+            },
+            trap.putsp => {
+                self.TODO(instruction);
+            },
+            trap.halt => {
+                self.TODO(instruction);
+            },
+        }
     }
 
     pub fn updateFlags(self: *LC3, reg: reg_idx) void {
