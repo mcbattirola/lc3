@@ -252,7 +252,9 @@ pub const LC3 = struct {
                 // TODO: disable terminal line buffering
             },
             trap.out => {
-                self.TODO(instruction);
+                // Write a character in R0[7:0] to the console display.
+                const c: u8 = @truncate(self.registers[reg_idx.r0.val()]);
+                std.io.getStdOut().writer().print("{c}", .{c}) catch unreachable;
             },
             trap.puts => {
                 // Write a string of ASCII characters to the console display.
