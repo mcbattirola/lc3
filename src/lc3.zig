@@ -70,7 +70,8 @@ pub const LC3 = struct {
         self.registers[reg_idx.pc.val()] = PC_START;
 
         while (self.running) {
-            const instruction = self.fetch();
+            // const instruction = self.fetch();
+            const instruction = 0xF023;
             const op: OP = @enumFromInt(instruction >> 12);
 
             switch (op) {
@@ -244,11 +245,11 @@ pub const LC3 = struct {
                 // Read a single character from the keyboard. The character is not echoed onto the
                 // console. Its ASCII code is copied into R0. The high eight bits of R0 are cleared
                 const r0 = reg_idx.r0;
-                var buf: [1]u8 = undefined;
-                _ = std.io.getStdIn().reader().readAll(&buf) catch unreachable;
+                const c = std.io.getStdIn().reader().readByte() catch unreachable;
 
-                self.registers[r0.val()] = buf[0];
+                self.registers[r0.val()] = c;
                 self.updateFlags(r0);
+                // TODO: disable term line buffering and echo
             },
             trap.out => {
                 // Write a character in R0[7:0] to the console display.
@@ -275,12 +276,11 @@ pub const LC3 = struct {
                 // The high eight bits of R0 are cleared
                 std.debug.print("Enter a character: ", .{});
                 const r0 = reg_idx.r0;
-                var buf: [1]u8 = undefined;
-                // TODO: disable terminal line buffering, echo character back
-                _ = std.io.getStdIn().reader().readAll(&buf) catch unreachable;
+                const c = std.io.getStdIn().reader().readByte() catch unreachable;
 
-                self.registers[r0.val()] = buf[0];
+                self.registers[r0.val()] = c;
                 self.updateFlags(r0);
+                // TODO: disable terminal line buffering, echo character back
             },
             trap.putsp => {
                 // Write a string of ASCII characters to the console. The characters are contained in
