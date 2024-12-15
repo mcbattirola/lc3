@@ -249,7 +249,6 @@ pub const LC3 = struct {
 
                 self.registers[r0.val()] = buf[0];
                 self.updateFlags(r0);
-                // TODO: disable terminal line buffering
             },
             trap.out => {
                 // Write a character in R0[7:0] to the console display.
@@ -271,9 +270,27 @@ pub const LC3 = struct {
                 }
             },
             trap.in => {
-                self.TODO(instruction);
+                // Print a prompt on the screen and read a single character from the keyboard. The
+                // character is echoed onto the console monitor, and its ASCII code is copied into R0.
+                // The high eight bits of R0 are cleared
+                std.debug.print("Enter a character: ", .{});
+                const r0 = reg_idx.r0;
+                var buf: [1]u8 = undefined;
+                // TODO: disable terminal line buffering, echo character back
+                _ = std.io.getStdIn().reader().readAll(&buf) catch unreachable;
+
+                self.registers[r0.val()] = buf[0];
+                self.updateFlags(r0);
             },
             trap.putsp => {
+                // Write a string of ASCII characters to the console. The characters are contained in
+                // consecutive memory locations, two characters per memory location, starting with the
+                // address specified in R0. The ASCII code contained in bits [7:0] of a memory location
+                // is written to the console first. Then the ASCII code contained in bits [15:8] of that
+                // memory location is written to the console. (A character string consisting of an odd
+                // number of characters to be written will have x00 in bits [15:8] of the memory
+                // location containing the last character to be written.) Writing terminates with the
+                // occurrence of x0000 in a memory location.
                 self.TODO(instruction);
             },
             trap.halt => {
