@@ -291,7 +291,20 @@ pub const LC3 = struct {
                 // number of characters to be written will have x00 in bits [15:8] of the memory
                 // location containing the last character to be written.) Writing terminates with the
                 // occurrence of x0000 in a memory location.
-                self.TODO(instruction);
+                var addr: u16 = self.registers[reg_idx.r0.val()];
+                var mem: u16 = self.readMem(addr);
+                var w = std.io.getStdOut().writer();
+                while (mem != 0) {
+                    const c1: u8 = @truncate(mem);
+                    w.print("{c}", .{c1}) catch unreachable;
+
+                    const c2: u8 = @truncate(mem >> 8);
+                    if (c2 != 0) {
+                        w.print("{c}", .{c2}) catch unreachable;
+                    }
+                    addr += 1;
+                    mem = self.readMem(addr);
+                }
             },
             trap.halt => {
                 std.debug.print("HALT", .{});
