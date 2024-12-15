@@ -304,3 +304,17 @@ fn op(comptime code: u16, comptime dr: reg_idx, comptime sr1: reg_idx, comptime 
     const sr2_mask = @intFromEnum(sr2); // Second source register
     return op_code | dr_mask | sr1_mask | mode | sr2_mask;
 }
+
+// TODO: test trap codes
+// test "trap putsp" {
+//     const instruction = 0xF024;
+//     var vm: LC3 = LC3{};
+//     vm.memory[0] = 0x4548; // EH
+//     vm.memory[1] = 0x4c4c; // LL
+//     vm.memory[2] = 0x204f; // _O
+//     vm.memory[3] = 0x6f57; // oW
+//     vm.memory[4] = 0x6c72; // lr
+//     vm.memory[5] = 0x2164; // !d
+//     vm.opTRAP(instruction);
+//     // should print `HELLO World!`
+// }

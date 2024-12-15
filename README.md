@@ -3,7 +3,7 @@
 ## TODO
 
 - [x] ops
-- [ ] trap
+- [x] trap
 - [ ] test memory ops
   - [x] write-related
   - [ ] read-related
