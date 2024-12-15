@@ -238,6 +238,8 @@ pub const LC3 = struct {
     }
 
     pub fn opTRAP(self: *LC3, instruction: u16) void {
+        self.registers[reg_idx.r7.val()] = self.registers[reg_idx.pc.val()];
+
         const trap_code: trap = @enumFromInt(instruction & 0xFF);
         switch (trap_code) {
             trap.getc => {
@@ -251,10 +253,6 @@ pub const LC3 = struct {
                 // The characters are contained in consecutive memory locations,
                 // one character per memory location, starting with the address specified in R0.
                 // Writing terminates with the occurrence of x0000 in a memory location.
-
-                // each character is stores in a memory location (not a byte),
-                // so the characters are 16 bits.
-
                 var addr: u16 = self.registers[reg_idx.r0.val()];
                 var c: u8 = @truncate(self.readMem(addr));
                 var w = std.io.getStdOut().writer();
