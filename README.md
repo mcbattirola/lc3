@@ -10,3 +10,4 @@
 - [ ] CLI
   - [ ] read file
 - [ ] GUI
+- [ ] Readme docs
