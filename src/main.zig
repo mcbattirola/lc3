@@ -5,7 +5,7 @@ const LC3 = lc3.LC3;
 const rl = @import("raylib");
 
 pub fn main() !void {
-    var general_purpose_allocator: std.heap.GeneralPurposeAllocator(.{}) = .init;
+    var general_purpose_allocator = std.heap.GeneralPurposeAllocator(.{}){};
     const gpa = general_purpose_allocator.allocator();
 
     var arena_instance = std.heap.ArenaAllocator.init(gpa);
@@ -19,6 +19,7 @@ pub fn main() !void {
 
     var vm = LC3{};
     std.mem.copyForwards(u16, vm.memory[0..params.rom.len], params.rom);
+
     vm.run();
 }
 

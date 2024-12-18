@@ -66,6 +66,8 @@ pub const LC3 = struct {
 
     running: bool = true,
 
+    // TODO: disable input buffering and restore it when we're done.
+
     pub fn run(self: *LC3) void {
         self.registers[reg_idx.pc.val()] = PC_START;
 
@@ -89,9 +91,9 @@ pub const LC3 = struct {
                 OP.LEA => self.opLEA(instruction),
                 OP.TRAP => self.opTRAP(instruction),
                 else => {
+                    std.debug.print("unknown instruction {d}, stop\n", .{op.val()});
                     printRegisters(self.registers);
                     self.running = false;
-                    std.debug.print("unknown instruction {d}, stop\n", .{op.val()});
                 },
             }
         }
@@ -100,7 +102,6 @@ pub const LC3 = struct {
     // returns an instruction from memory and increments pc
     pub fn fetch(self: *LC3) u16 {
         const instruction = self.readMem(self.registers[reg_idx.pc.val()]);
-        std.debug.print("instruction: {d}\n", .{instruction});
         self.incrementPC();
         return instruction;
     }

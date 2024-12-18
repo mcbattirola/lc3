@@ -36,7 +36,6 @@ fn readRom(file_path: []const u8, allocator: std.mem.Allocator) ![]u16 {
     const max_read = @as(u32, @intCast(MEMORY_SIZE)) - @as(u32, @intCast(origin));
 
     const bytes = try allocator.alignedAlloc(u8, @alignOf(u16), max_read * @sizeOf(u16));
-    defer allocator.free(bytes);
     _ = try reader.readAll(bytes);
 
     const words: []u16 = std.mem.bytesAsSlice(u16, bytes[0..]);
