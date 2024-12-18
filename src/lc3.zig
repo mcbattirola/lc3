@@ -70,8 +70,7 @@ pub const LC3 = struct {
         self.registers[reg_idx.pc.val()] = PC_START;
 
         while (self.running) {
-            // const instruction = self.fetch();
-            const instruction = 0xF023;
+            const instruction = self.fetch();
             const op: OP = @enumFromInt(instruction >> 12);
 
             switch (op) {
