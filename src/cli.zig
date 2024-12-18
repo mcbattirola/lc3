@@ -1,5 +1,4 @@
 const std = @import("std");
-const util = @import("util.zig");
 const MEMORY_SIZE = @import("lc3.zig").MEMORY_SIZE;
 
 pub const Params = struct {
@@ -23,7 +22,7 @@ pub fn parseParams(allocator: std.mem.Allocator) !Params {
     return params;
 }
 
-fn readRom(file_path: []const u8, allocator: std.mem.Allocator) ![]const u16 {
+fn readRom(file_path: []const u8, allocator: std.mem.Allocator) ![]u16 {
     // The first 16 bits of the program file specify the address in memory where the program should start.
     const file = std.fs.cwd().openFile(file_path, .{}) catch |err| {
         return err;

@@ -1,6 +1,7 @@
 const std = @import("std");
 const cli = @import("cli.zig");
-const LC3 = @import("lc3.zig").LC3;
+const lc3 = @import("lc3.zig");
+const LC3 = lc3.LC3;
 const rl = @import("raylib");
 
 pub fn main() !void {
@@ -17,7 +18,7 @@ pub fn main() !void {
     std.debug.print("mouse at {?}\n", .{rl.getMousePosition()});
 
     var vm = LC3{};
-    vm.memory = params.rom;
+    std.mem.copyForwards(u16, vm.memory[0..params.rom.len], params.rom);
     vm.run();
 }
 
