@@ -73,7 +73,9 @@ pub const LC3 = struct {
 
         while (self.running) {
             const instruction = self.fetch();
+
             self.incrementPC();
+
             const op: OP = @enumFromInt(instruction >> 12);
 
             switch (op) {
@@ -146,7 +148,8 @@ pub const LC3 = struct {
         const sr = (instruction >> 9) & 0x7;
         const pc_offset = signExtend(instruction & 0x1FF, 9);
         // mem[pc + offset] = sr
-        self.writeMem(self.registers[reg_idx.pc.val()] + pc_offset, self.registers[sr]);
+        const addr, _ = @addWithOverflow(self.registers[reg_idx.pc.val()], pc_offset);
+        self.writeMem(addr, self.registers[sr]);
     }
 
     pub fn opJSR(self: *LC3, instruction: u16) void {
@@ -155,7 +158,7 @@ pub const LC3 = struct {
 
         if ((instruction >> 11) & 1 == 1) {
             // JSR
-            const pc_offset = signExtend(instruction & 0x1FF, 11);
+            const pc_offset = signExtend(instruction & 0x7FF, 11);
             self.registers[reg_idx.pc.val()] += pc_offset;
         } else {
             // JSSR
@@ -186,7 +189,7 @@ pub const LC3 = struct {
         const offset = signExtend(instruction & 0x3F, 6);
 
         self.registers[dr] = self.readMem(self.registers[base] + offset);
-        self.updateFlags(@enumFromInt(dr));
+        // self.updateFlags(@enumFromInt(dr));
     }
 
     pub fn opSTR(self: *LC3, instruction: u16) void {
@@ -194,7 +197,8 @@ pub const LC3 = struct {
         const base = (instruction >> 6) & 0x7;
         const offset = signExtend(instruction & 0x3F, 6);
 
-        self.writeMem(base + offset, self.registers[sr]);
+        const addr, _ = @addWithOverflow(base, offset);
+        self.writeMem(addr, self.registers[sr]);
     }
 
     pub fn opNOT(self: *LC3, instruction: u16) void {
