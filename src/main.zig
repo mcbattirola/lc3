@@ -20,6 +20,14 @@ pub fn main() !void {
     var vm = LC3{};
     std.mem.copyForwards(u16, vm.memory[0..params.rom.len], params.rom);
 
+    // TODO: remove debug stuff like this
+    // when we have a good UI
+    // std.debug.print("mem:\n", .{});
+    // for (12288..12338) |i| {
+    //     std.debug.print("{x} ", .{vm.memory[i]});
+    // }
+    // std.debug.print("\n----\n", .{});
+
     vm.run();
 }
 

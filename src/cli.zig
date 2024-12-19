@@ -30,17 +30,24 @@ fn readRom(file_path: []const u8, allocator: std.mem.Allocator) ![]u16 {
     defer file.close();
     const reader = file.reader();
 
-    var origin = try reader.readVarInt(u16, std.builtin.Endian.little, 1);
+    var origin = try reader.readInt(u16, std.builtin.Endian.little);
     origin = @byteSwap(origin);
 
     const max_read = @as(u32, @intCast(MEMORY_SIZE)) - @as(u32, @intCast(origin));
 
-    const bytes = try allocator.alignedAlloc(u8, @alignOf(u16), max_read * @sizeOf(u16));
-    _ = try reader.readAll(bytes);
+    const bytes: []u16 = try allocator.alloc(u16, MEMORY_SIZE);
+    @memset(bytes, 0);
 
-    const words: []u16 = std.mem.bytesAsSlice(u16, bytes[0..]);
-    for (words) |*w| {
-        w.* = @byteSwap(w.*);
+    var mem_idx = origin;
+    while (mem_idx <= max_read) {
+        const word = reader.readInt(u16, std.builtin.Endian.little) catch |err| {
+            switch (err) {
+                error.EndOfStream => break,
+                else => return err,
+            }
+        };
+        bytes[mem_idx] = @byteSwap(word);
+        mem_idx += 1;
     }
-    return words;
+    return bytes;
 }

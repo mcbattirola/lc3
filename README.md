@@ -7,7 +7,7 @@
 - [ ] test memory ops
   - [x] write-related
   - [ ] read-related
-- [ ] CLI
-  - [ ] read file
+- [x] CLI
+  - [x] read file
 - [ ] GUI
 - [ ] Readme docs

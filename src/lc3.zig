@@ -73,6 +73,7 @@ pub const LC3 = struct {
 
         while (self.running) {
             const instruction = self.fetch();
+            self.incrementPC();
             const op: OP = @enumFromInt(instruction >> 12);
 
             switch (op) {
@@ -102,7 +103,6 @@ pub const LC3 = struct {
     // returns an instruction from memory and increments pc
     pub fn fetch(self: *LC3) u16 {
         const instruction = self.readMem(self.registers[reg_idx.pc.val()]);
-        self.incrementPC();
         return instruction;
     }
 
