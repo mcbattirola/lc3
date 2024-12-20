@@ -4,6 +4,8 @@ const OP = @import("op.zig").OP;
 pub const MEMORY_SIZE = 1 << 16;
 const PC_START = 0x3000;
 
+const debug = false;
+
 // register indexes
 pub const reg_idx = enum(usize) {
     r0 = 0,
@@ -73,25 +75,26 @@ pub const LC3 = struct {
 
         var c: i32 = 0;
         while (self.running) {
+            if (debug) {
+                std.debug.print("---\n", .{});
+            }
+
             c += 1;
-            if (c > 1000) {
+            if (c > 100 and debug) {
                 @panic("debug");
             }
             const instruction = self.fetch();
 
-            const debugprint = (instruction >> 12) > 0;
-
-            if (debugprint) {
-                std.debug.print("instruction: {X} ({d}) (PC={X})\n", .{ instruction, instruction, self.registers[reg_idx.pc.val()] });
+            if (debug) {
+                std.debug.print("instruction: {X} ({d}) (PC={X}); r1={X}, r7={X}\n", .{ instruction, instruction, self.registers[reg_idx.pc.val()], self.registers[reg_idx.r1.val()], self.registers[reg_idx.r7.val()] });
             }
 
             self.incrementPC();
 
             const op: OP = @enumFromInt(instruction >> 12);
 
-            if (debugprint) {
+            if (debug) {
                 op.print();
-                std.debug.print("---\n", .{});
             }
 
             switch (op) {
@@ -131,8 +134,9 @@ pub const LC3 = struct {
     pub fn opBR(self: *LC3, instruction: u16) void {
         const pc_offset = signExtend(instruction & 0x1FF, 9);
         const cond_flag = (instruction >> 9) & 0x7;
-        if ((cond_flag & self.registers[reg_idx.cond.val()] != 0)) {
-            self.registers[reg_idx.pc.val()] += pc_offset;
+        if ((cond_flag & self.registers[reg_idx.cond.val()]) != 0) {
+            const new_pc, _ = @addWithOverflow(self.registers[reg_idx.pc.val()], pc_offset);
+            self.registers[reg_idx.pc.val()] = new_pc;
         }
     }
 
@@ -156,7 +160,8 @@ pub const LC3 = struct {
         const dr = (instruction >> 9) & 0x7;
         const pc_offset = signExtend(instruction & 0x1FF, 9);
 
-        self.registers[dr] = self.readMem(self.registers[reg_idx.pc.val()] + pc_offset);
+        const addr, _ = @addWithOverflow(self.registers[reg_idx.pc.val()], pc_offset);
+        self.registers[dr] = self.readMem(addr);
         self.updateFlags(@enumFromInt(dr));
     }
 
@@ -175,7 +180,8 @@ pub const LC3 = struct {
         if ((instruction >> 11) & 1 == 1) {
             // JSR
             const pc_offset = signExtend(instruction & 0x7FF, 11);
-            self.registers[reg_idx.pc.val()] += pc_offset;
+            const new_pc, _ = @addWithOverflow(self.registers[reg_idx.pc.val()], pc_offset);
+            self.registers[reg_idx.pc.val()] = new_pc;
         } else {
             // JSSR
             const base = (instruction >> 6) & 0x7;
@@ -215,7 +221,9 @@ pub const LC3 = struct {
         const offset = signExtend(instruction & 0x3F, 6);
 
         const addr, _ = @addWithOverflow(self.registers[base_r], offset);
-        std.debug.print("sr = {d}, base = {d}, offset = {d}, FINAL ADDR: {X} ({d})\n", .{ sr, base_r, offset, addr, addr });
+        if (debug) {
+            std.debug.print("sr = {d}, base = {d}, offset = {d}, FINAL ADDR: {X} ({d})\n", .{ sr, base_r, offset, addr, addr });
+        }
         self.writeMem(addr, self.registers[sr]);
     }
 
@@ -231,7 +239,8 @@ pub const LC3 = struct {
         const dr = (instruction >> 9) & 0x7;
         const pc_offset = signExtend(instruction & 0x1FF, 9);
 
-        self.registers[dr] = self.readMem(self.readMem(self.registers[reg_idx.pc.val()] + pc_offset));
+        const addr, _ = @addWithOverflow(self.registers[reg_idx.pc.val()], pc_offset);
+        self.registers[dr] = self.readMem(self.readMem(addr));
         self.updateFlags(@enumFromInt(dr));
     }
 
@@ -240,20 +249,22 @@ pub const LC3 = struct {
         const sr = (instruction >> 9) & 0x7;
         const pc_offset = signExtend(instruction & 0x1FF, 9);
         // mem[mem[pc + offset]] = sr
-        self.writeMem(self.readMem(self.registers[reg_idx.pc.val() + pc_offset]), self.registers[sr]);
+        const addr, _ = @addWithOverflow(self.registers[reg_idx.pc.val()], pc_offset);
+        self.writeMem(self.readMem(addr), self.registers[sr]);
     }
 
     pub fn opJMP(self: *LC3, instruction: u16) void {
         // also handles RET since 'base' will be 7
         const base = (instruction >> 6) & 0x7;
-        self.registers[reg_idx.pc.val()] = base;
+        self.registers[reg_idx.pc.val()] = self.registers[base];
     }
 
     // TODO: tests
     pub fn opLEA(self: *LC3, instruction: u16) void {
         const dr = (instruction >> 9) & 0x7;
         const pc_offset = signExtend(instruction & 0x1FF, 9);
-        self.registers[dr] = self.registers[reg_idx.pc.val()] + pc_offset;
+        const addr, _ = @addWithOverflow(self.registers[reg_idx.pc.val()], pc_offset);
+        self.registers[dr] = addr;
         self.updateFlags(@enumFromInt(dr));
     }
 
@@ -262,7 +273,9 @@ pub const LC3 = struct {
         self.registers[reg_idx.r7.val()] = self.registers[reg_idx.pc.val()];
 
         const trap_code: trap = @enumFromInt(instruction & 0xFF);
-        std.debug.print("   trap: {X}\n", .{@intFromEnum(trap_code)});
+        if (debug) {
+            std.debug.print("   trap: {X}\n", .{@intFromEnum(trap_code)});
+        }
         switch (trap_code) {
             trap.getc => {
                 // Read a single character from the keyboard. The character is not echoed onto the
@@ -271,6 +284,9 @@ pub const LC3 = struct {
                 const c = std.io.getStdIn().reader().readByte() catch unreachable;
 
                 self.registers[r0.val()] = c;
+                if (debug) {
+                    std.debug.print("self.registers[r0.val()] = {X} ({d})\n", .{ self.registers[r0.val()], self.registers[r0.val()] });
+                }
                 self.updateFlags(r0);
                 // TODO: disable term line buffering and echo
             },
@@ -287,7 +303,9 @@ pub const LC3 = struct {
                 var addr: u16 = self.registers[reg_idx.r0.val()];
                 var c: u8 = @truncate(self.readMem(addr));
                 var w = std.io.getStdOut().writer();
-                std.debug.print("puts addr: {X}\n", .{addr});
+                if (debug) {
+                    std.debug.print("puts addr: {X}\n", .{addr});
+                }
                 while (c != 0) {
                     w.print("{c}", .{c}) catch unreachable;
                     addr += 1;
