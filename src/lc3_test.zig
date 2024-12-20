@@ -253,14 +253,14 @@ test "st" {
 }
 
 test "str" {
-    // sr = r4, base = 3, offset = 10
+    // sr = r4, base = r3, offset = 10
     const instruction: u16 = 0b0111_100_011_001010;
     var vm: LC3 = LC3{};
 
     vm.registers[reg_idx.r4.val()] = 5;
     vm.opSTR(instruction);
-    // mem 13 (base + offset) should be 5 (r4)
-    try t.expectEqual(5, vm.memory[13]);
+    // mem 10 (base + offset) should be 5 (r4)
+    try t.expectEqual(5, vm.memory[10]);
 }
 
 fn expectEqualRegisters(expected: Registers, actual: Registers) !void {
