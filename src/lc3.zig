@@ -71,12 +71,28 @@ pub const LC3 = struct {
     pub fn run(self: *LC3) void {
         self.registers[reg_idx.pc.val()] = PC_START;
 
+        var c: i32 = 0;
         while (self.running) {
+            c += 1;
+            if (c > 1000) {
+                @panic("debug");
+            }
             const instruction = self.fetch();
+
+            const debugprint = (instruction >> 12) > 0;
+
+            if (debugprint) {
+                std.debug.print("instruction: {X} ({d}) (PC={X})\n", .{ instruction, instruction, self.registers[reg_idx.pc.val()] });
+            }
 
             self.incrementPC();
 
             const op: OP = @enumFromInt(instruction >> 12);
+
+            if (debugprint) {
+                op.print();
+                std.debug.print("---\n", .{});
+            }
 
             switch (op) {
                 OP.BR => self.opBR(instruction),
@@ -188,16 +204,18 @@ pub const LC3 = struct {
         const base = (instruction >> 6) & 0x7;
         const offset = signExtend(instruction & 0x3F, 6);
 
-        self.registers[dr] = self.readMem(self.registers[base] + offset);
-        // self.updateFlags(@enumFromInt(dr));
+        const addr, _ = @addWithOverflow(self.registers[base], offset);
+        self.registers[dr] = self.readMem(addr);
+        self.updateFlags(@enumFromInt(dr));
     }
 
     pub fn opSTR(self: *LC3, instruction: u16) void {
         const sr = (instruction >> 9) & 0x7;
-        const base = (instruction >> 6) & 0x7;
+        const base_r = (instruction >> 6) & 0x7;
         const offset = signExtend(instruction & 0x3F, 6);
 
-        const addr, _ = @addWithOverflow(base, offset);
+        const addr, _ = @addWithOverflow(self.registers[base_r], offset);
+        std.debug.print("sr = {d}, base = {d}, offset = {d}, FINAL ADDR: {X} ({d})\n", .{ sr, base_r, offset, addr, addr });
         self.writeMem(addr, self.registers[sr]);
     }
 
@@ -244,6 +262,7 @@ pub const LC3 = struct {
         self.registers[reg_idx.r7.val()] = self.registers[reg_idx.pc.val()];
 
         const trap_code: trap = @enumFromInt(instruction & 0xFF);
+        std.debug.print("   trap: {X}\n", .{@intFromEnum(trap_code)});
         switch (trap_code) {
             trap.getc => {
                 // Read a single character from the keyboard. The character is not echoed onto the
@@ -268,6 +287,7 @@ pub const LC3 = struct {
                 var addr: u16 = self.registers[reg_idx.r0.val()];
                 var c: u8 = @truncate(self.readMem(addr));
                 var w = std.io.getStdOut().writer();
+                std.debug.print("puts addr: {X}\n", .{addr});
                 while (c != 0) {
                     w.print("{c}", .{c}) catch unreachable;
                     addr += 1;
