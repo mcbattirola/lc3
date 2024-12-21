@@ -357,9 +357,10 @@ pub const LC3 = struct {
     pub fn readMem(self: *LC3, addr: u16) u16 {
         if (addr == mmr.kbstatus.val()) {
             // if key pressed
-            if (true) {
+            if (checkKey()) {
                 self.memory[mmr.kbstatus.val()] = 1 << 15;
-                self.memory[mmr.kbdata.val()] = 1; // TODO: value of key pressed
+                const key = readKey() orelse 0;
+                self.memory[mmr.kbdata.val()] = @intCast(key);
             } else {
                 self.memory[mmr.kbstatus.val()] = 0;
             }
@@ -413,4 +414,30 @@ test "signExtend" {
     // Test with full bit-width (16 bits) - no extension needed
     try std.testing.expectEqual(0x7FFF, signExtend(0x7FFF, 16));
     try std.testing.expectEqual(0xFFFF, signExtend(0xFFFF, 16));
+}
+
+// checks if there's any events in stdin that we can read
+fn checkKey() bool {
+    var fds = [_]std.os.linux.pollfd{
+        .{
+            .fd = std.io.getStdIn().handle,
+            .events = std.os.linux.POLL.IN,
+            .revents = 0,
+        },
+    };
+
+    const ret = std.os.linux.poll(&fds, 1, 0); // 0ms timeout, non-blocking
+    return (ret > 0) and (fds[0].revents & std.os.linux.POLL.I != 0);
+}
+
+// Read events in stdin.
+// Only call this after checkKey indicates data is available
+// so that we avoid blocking.
+fn readKey() ?u8 {
+    var buf: [1]u8 = undefined;
+    const readBytes = std.io.getStdIn().read(&buf) catch return null;
+    if (readBytes == 1) {
+        return buf[0];
+    }
+    return null;
 }
