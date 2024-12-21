@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const OP = @import("op.zig").OP;
 
 pub const MEMORY_SIZE = 1 << 16;
@@ -418,16 +419,29 @@ test "signExtend" {
 
 // checks if there's any events in stdin that we can read
 fn checkKey() bool {
-    var fds = [_]std.os.linux.pollfd{
-        .{
-            .fd = std.io.getStdIn().handle,
-            .events = std.os.linux.POLL.IN,
-            .revents = 0,
+    switch (comptime builtin.os.tag) {
+        .linux => {
+            var fds = [_]std.os.linux.pollfd{
+                .{
+                    .fd = std.io.getStdIn().handle,
+                    .events = std.os.linux.POLL.IN,
+                    .revents = 0,
+                },
+            };
+            const ret = std.os.linux.poll(&fds, 1, 0); // 0ms timeout, non-blocking
+            return (ret > 0) and (fds[0].revents & std.os.linux.POLL.IN != 0);
         },
-    };
+        .windows => {
+            const c = @cImport({
+                @cInclude("conio.h");
+            });
+            const w = std.os.windows;
+            const handle = w.GetStdHandle(w.STD_INPUT_HANDLE);
 
-    const ret = std.os.linux.poll(&fds, 1, 0); // 0ms timeout, non-blocking
-    return (ret > 0) and (fds[0].revents & std.os.linux.POLL.I != 0);
+            return (w.WaitForSingleObject(handle, 1000) == w.WAIT_OBJECT_0) and (c._kbhit() != 0);
+        },
+        else => return false,
+    }
 }
 
 // Read events in stdin.
