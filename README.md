@@ -7,3 +7,4 @@
   - [ ] Step
   - [ ] Memory
 - [ ] Docs
+- [ ] Disable line buffering on Windows

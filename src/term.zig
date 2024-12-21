@@ -1,8 +1,10 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const linux = std.os.linux;
 const termios = linux.termios;
 
 pub fn disableInputBuffering(in: *std.fs.File) !termios {
+    // TODO: windows
     var t = termios{
         .iflag = .{},
         .oflag = .{},
@@ -34,5 +36,7 @@ pub fn openInputTTY(allocator: std.mem.Allocator) !*std.fs.File {
 }
 
 pub fn setAttr(in: *std.fs.File, t: *linux.termios) void {
-    _ = linux.tcsetattr(in.handle, linux.TCSA.NOW, t);
+    if (builtin.os.tag == .linux) {
+        _ = linux.tcsetattr(in.handle, linux.TCSA.NOW, t);
+    }
 }
