@@ -66,6 +66,7 @@ pub const LC3 = struct {
 
     running: bool = true,
     debug: bool = false,
+    w: std.fs.File.Writer = std.io.getStdOut().writer(),
 
     pub fn init(self: *LC3) void {
         self.registers[reg_idx.pc.val()] = PC_START;
@@ -80,10 +81,6 @@ pub const LC3 = struct {
 
     // runs a single CPU cycle
     pub fn runCycle(self: *LC3) void {
-        if (self.debug) {
-            std.debug.print("---\n", .{});
-        }
-
         const instruction = self.fetch();
 
         if (self.debug) {
@@ -221,9 +218,6 @@ pub const LC3 = struct {
         const offset = signExtend(instruction & 0x3F, 6);
 
         const addr, _ = @addWithOverflow(self.registers[base_r], offset);
-        if (self.debug) {
-            std.debug.print("sr = {d}, base = {d}, offset = {d}, FINAL ADDR: {X} ({d})\n", .{ sr, base_r, offset, addr, addr });
-        }
         self.writeMem(addr, self.registers[sr]);
     }
 
@@ -234,7 +228,7 @@ pub const LC3 = struct {
         self.updateFlags(@enumFromInt(dr));
     }
 
-    // TODO: tests when readMem is implemented
+    // TODO: tests
     pub fn opLDI(self: *LC3, instruction: u16) void {
         const dr = (instruction >> 9) & 0x7;
         const pc_offset = signExtend(instruction & 0x1FF, 9);
@@ -273,9 +267,6 @@ pub const LC3 = struct {
         self.registers[reg_idx.r7.val()] = self.registers[reg_idx.pc.val()];
 
         const trap_code: trap = @enumFromInt(instruction & 0xFF);
-        if (self.debug) {
-            std.debug.print("   trap: {X}\n", .{@intFromEnum(trap_code)});
-        }
         switch (trap_code) {
             trap.getc => {
                 // Read a single character from the keyboard. The character is not echoed onto the
@@ -284,16 +275,12 @@ pub const LC3 = struct {
                 const c = std.io.getStdIn().reader().readByte() catch unreachable;
 
                 self.registers[r0.val()] = c;
-                if (self.debug) {
-                    std.debug.print("self.registers[r0.val()] = {X} ({d})\n", .{ self.registers[r0.val()], self.registers[r0.val()] });
-                }
                 self.updateFlags(r0);
-                // TODO: disable term line buffering and echo
             },
             trap.out => {
                 // Write a character in R0[7:0] to the console display.
                 const c: u8 = @truncate(self.registers[reg_idx.r0.val()]);
-                std.io.getStdOut().writer().print("{c}", .{c}) catch unreachable;
+                self.w.print("{c}", .{c}) catch unreachable;
             },
             trap.puts => {
                 // Write a string of ASCII characters to the console display.
@@ -302,12 +289,8 @@ pub const LC3 = struct {
                 // Writing terminates with the occurrence of x0000 in a memory location.
                 var addr: u16 = self.registers[reg_idx.r0.val()];
                 var c: u8 = @truncate(self.readMem(addr));
-                var w = std.io.getStdOut().writer();
-                if (self.debug) {
-                    std.debug.print("puts addr: {X}\n", .{addr});
-                }
                 while (c != 0) {
-                    w.print("{c}", .{c}) catch unreachable;
+                    self.w.print("{c}", .{c}) catch unreachable;
                     addr += 1;
                     c = @truncate(self.readMem(addr));
                 }
@@ -322,7 +305,8 @@ pub const LC3 = struct {
 
                 self.registers[r0.val()] = c;
                 self.updateFlags(r0);
-                // TODO: disable terminal line buffering, echo character back
+
+                self.w.print("{c}", .{c}) catch unreachable;
             },
             trap.putsp => {
                 // Write a string of ASCII characters to the console. The characters are contained in
@@ -335,14 +319,13 @@ pub const LC3 = struct {
                 // occurrence of x0000 in a memory location.
                 var addr: u16 = self.registers[reg_idx.r0.val()];
                 var mem: u16 = self.readMem(addr);
-                var w = std.io.getStdOut().writer();
                 while (mem != 0) {
                     const c1: u8 = @truncate(mem);
-                    w.print("{c}", .{c1}) catch unreachable;
+                    self.w.print("{c}", .{c1}) catch unreachable;
 
                     const c2: u8 = @truncate(mem >> 8);
                     if (c2 != 0) {
-                        w.print("{c}", .{c2}) catch unreachable;
+                        self.w.print("{c}", .{c2}) catch unreachable;
                     }
                     addr += 1;
                     mem = self.readMem(addr);
