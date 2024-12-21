@@ -9,5 +9,7 @@
   - [ ] read-related
 - [x] CLI
   - [x] read file
-- [ ] GUI
+- [ ] GUI-mode
+- [ ] Term-mode
+  - [ ] Disable input buffering
 - [ ] Readme docs

@@ -4,8 +4,6 @@ const OP = @import("op.zig").OP;
 pub const MEMORY_SIZE = 1 << 16;
 const PC_START = 0x3000;
 
-const debug = false;
-
 // register indexes
 pub const reg_idx = enum(usize) {
     r0 = 0,
@@ -67,57 +65,59 @@ pub const LC3 = struct {
     registers: Registers = newRegisters(),
 
     running: bool = true,
+    debug: bool = false,
 
-    // TODO: disable input buffering and restore it when we're done.
-
-    pub fn run(self: *LC3) void {
+    pub fn init(self: *LC3) void {
         self.registers[reg_idx.pc.val()] = PC_START;
+    }
 
-        var c: i32 = 0;
+    // runs the VM
+    pub fn run(self: *LC3) void {
         while (self.running) {
-            if (debug) {
-                std.debug.print("---\n", .{});
-            }
+            self.runCycle();
+        }
+    }
 
-            c += 1;
-            if (c > 100 and debug) {
-                @panic("debug");
-            }
-            const instruction = self.fetch();
+    // runs a single CPU cycle
+    pub fn runCycle(self: *LC3) void {
+        if (self.debug) {
+            std.debug.print("---\n", .{});
+        }
 
-            if (debug) {
-                std.debug.print("instruction: {X} ({d}) (PC={X}); r1={X}, r7={X}\n", .{ instruction, instruction, self.registers[reg_idx.pc.val()], self.registers[reg_idx.r1.val()], self.registers[reg_idx.r7.val()] });
-            }
+        const instruction = self.fetch();
 
-            self.incrementPC();
+        if (self.debug) {
+            std.debug.print("instruction: {X} ({d}) (PC={X}); r1={X}, r7={X}\n", .{ instruction, instruction, self.registers[reg_idx.pc.val()], self.registers[reg_idx.r1.val()], self.registers[reg_idx.r7.val()] });
+        }
 
-            const op: OP = @enumFromInt(instruction >> 12);
+        self.incrementPC();
 
-            if (debug) {
-                op.print();
-            }
+        const op: OP = @enumFromInt(instruction >> 12);
 
-            switch (op) {
-                OP.BR => self.opBR(instruction),
-                OP.ADD => self.opADD(instruction),
-                OP.LD => self.opLD(instruction),
-                OP.ST => self.opST(instruction),
-                OP.JSR => self.opJSR(instruction),
-                OP.AND => self.opAND(instruction),
-                OP.LDR => self.opLDR(instruction),
-                OP.STR => self.opSTR(instruction),
-                OP.NOT => self.opNOT(instruction),
-                OP.LDI => self.opLDI(instruction),
-                OP.STI => self.opSTI(instruction),
-                OP.JMP => self.opJMP(instruction),
-                OP.LEA => self.opLEA(instruction),
-                OP.TRAP => self.opTRAP(instruction),
-                else => {
-                    std.debug.print("unknown instruction {d}, stop\n", .{op.val()});
-                    printRegisters(self.registers);
-                    self.running = false;
-                },
-            }
+        if (self.debug) {
+            op.print();
+        }
+
+        switch (op) {
+            OP.BR => self.opBR(instruction),
+            OP.ADD => self.opADD(instruction),
+            OP.LD => self.opLD(instruction),
+            OP.ST => self.opST(instruction),
+            OP.JSR => self.opJSR(instruction),
+            OP.AND => self.opAND(instruction),
+            OP.LDR => self.opLDR(instruction),
+            OP.STR => self.opSTR(instruction),
+            OP.NOT => self.opNOT(instruction),
+            OP.LDI => self.opLDI(instruction),
+            OP.STI => self.opSTI(instruction),
+            OP.JMP => self.opJMP(instruction),
+            OP.LEA => self.opLEA(instruction),
+            OP.TRAP => self.opTRAP(instruction),
+            else => {
+                std.debug.print("unknown instruction {d}, stop\n", .{op.val()});
+                printRegisters(self.registers);
+                self.running = false;
+            },
         }
     }
 
@@ -221,7 +221,7 @@ pub const LC3 = struct {
         const offset = signExtend(instruction & 0x3F, 6);
 
         const addr, _ = @addWithOverflow(self.registers[base_r], offset);
-        if (debug) {
+        if (self.debug) {
             std.debug.print("sr = {d}, base = {d}, offset = {d}, FINAL ADDR: {X} ({d})\n", .{ sr, base_r, offset, addr, addr });
         }
         self.writeMem(addr, self.registers[sr]);
@@ -273,7 +273,7 @@ pub const LC3 = struct {
         self.registers[reg_idx.r7.val()] = self.registers[reg_idx.pc.val()];
 
         const trap_code: trap = @enumFromInt(instruction & 0xFF);
-        if (debug) {
+        if (self.debug) {
             std.debug.print("   trap: {X}\n", .{@intFromEnum(trap_code)});
         }
         switch (trap_code) {
@@ -284,7 +284,7 @@ pub const LC3 = struct {
                 const c = std.io.getStdIn().reader().readByte() catch unreachable;
 
                 self.registers[r0.val()] = c;
-                if (debug) {
+                if (self.debug) {
                     std.debug.print("self.registers[r0.val()] = {X} ({d})\n", .{ self.registers[r0.val()], self.registers[r0.val()] });
                 }
                 self.updateFlags(r0);
@@ -303,7 +303,7 @@ pub const LC3 = struct {
                 var addr: u16 = self.registers[reg_idx.r0.val()];
                 var c: u8 = @truncate(self.readMem(addr));
                 var w = std.io.getStdOut().writer();
-                if (debug) {
+                if (self.debug) {
                     std.debug.print("puts addr: {X}\n", .{addr});
                 }
                 while (c != 0) {
