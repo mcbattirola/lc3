@@ -13,8 +13,8 @@ pub fn disableInputBuffering(in: *std.fs.File) !termios {
         .ispeed = linux.speed_t.B38400,
         .ospeed = linux.speed_t.B38400,
     };
-    // Get current terminal attributes
 
+    // Get current terminal attributes
     _ = linux.tcgetattr(in.handle, &t);
     const original_state = t;
 

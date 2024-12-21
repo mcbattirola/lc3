@@ -153,7 +153,6 @@ pub const LC3 = struct {
         self.updateFlags(@enumFromInt(dr));
     }
 
-    // TODO: tests
     pub fn opLD(self: *LC3, instruction: u16) void {
         const dr = (instruction >> 9) & 0x7;
         const pc_offset = signExtend(instruction & 0x1FF, 9);
@@ -202,7 +201,6 @@ pub const LC3 = struct {
         self.updateFlags(@enumFromInt(dr));
     }
 
-    // TODO: tests
     pub fn opLDR(self: *LC3, instruction: u16) void {
         const dr = (instruction >> 9) & 0x7;
         const base = (instruction >> 6) & 0x7;
@@ -229,7 +227,6 @@ pub const LC3 = struct {
         self.updateFlags(@enumFromInt(dr));
     }
 
-    // TODO: tests
     pub fn opLDI(self: *LC3, instruction: u16) void {
         const dr = (instruction >> 9) & 0x7;
         const pc_offset = signExtend(instruction & 0x1FF, 9);
@@ -239,7 +236,6 @@ pub const LC3 = struct {
         self.updateFlags(@enumFromInt(dr));
     }
 
-    // TODO: test
     pub fn opSTI(self: *LC3, instruction: u16) void {
         const sr = (instruction >> 9) & 0x7;
         const pc_offset = signExtend(instruction & 0x1FF, 9);
@@ -254,7 +250,6 @@ pub const LC3 = struct {
         self.registers[reg_idx.pc.val()] = self.registers[base];
     }
 
-    // TODO: tests
     pub fn opLEA(self: *LC3, instruction: u16) void {
         const dr = (instruction >> 9) & 0x7;
         const pc_offset = signExtend(instruction & 0x1FF, 9);
@@ -263,7 +258,6 @@ pub const LC3 = struct {
         self.updateFlags(@enumFromInt(dr));
     }
 
-    // TODO: tests
     pub fn opTRAP(self: *LC3, instruction: u16) void {
         self.registers[reg_idx.r7.val()] = self.registers[reg_idx.pc.val()];
 
@@ -354,7 +348,6 @@ pub const LC3 = struct {
         self.registers[reg_idx.cond.val()] = flag.pos.val();
     }
 
-    // TODO: tests
     pub fn readMem(self: *LC3, addr: u16) u16 {
         if (addr == mmr.kbstatus.val()) {
             // if key pressed
@@ -372,10 +365,6 @@ pub const LC3 = struct {
 
     pub fn writeMem(self: *LC3, addr: u16, val: u16) void {
         self.memory[addr] = val;
-    }
-
-    pub fn TODO(self: *LC3, instruction: u16) void {
-        std.debug.print("TODO - {d}, {any}", .{ instruction, self.running });
     }
 };
 

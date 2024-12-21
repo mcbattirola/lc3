@@ -24,9 +24,8 @@ pub fn main() !void {
     const input = try term.openInputTTY(arena);
 
     var original_tty_state = try term.disableInputBuffering(input);
-    // reset to original state when we're done
-    defer term.setAttr(input, &original_tty_state);
-    // Set up signal handling for SIGINT (Ctrl+C)
+    defer term.setAttr(input, &original_tty_state); // reset original term state
+
     const sa = std.os.linux.Sigaction{ .handler = .{
         .handler = handleSigInt,
     }, .mask = [_]u32{0} ** 32, .flags = 0 };
