@@ -67,10 +67,11 @@ pub const LC3 = struct {
 
     running: bool = true,
     debug: bool = false,
-    w: std.fs.File.Writer = std.io.getStdOut().writer(),
+    w: std.fs.File.Writer = undefined,
 
     pub fn init(self: *LC3) void {
         self.registers[reg_idx.pc.val()] = PC_START;
+        self.w = std.io.getStdOut().writer();
     }
 
     // runs the VM
@@ -424,10 +425,17 @@ fn checkKey() bool {
             const c = @cImport({
                 @cInclude("conio.h");
             });
-            const w = std.os.windows;
-            const handle = w.GetStdHandle(w.STD_INPUT_HANDLE);
+            const windows = std.os.windows;
+            const handle = windows.GetStdHandle(windows.STD_INPUT_HANDLE) catch unreachable;
 
-            return (w.WaitForSingleObject(handle, 1000) == w.WAIT_OBJECT_0) and (c._kbhit() != 0);
+            // WaitForSingleObject in Zig's std lib, WaitForSingleObject returns no
+            // error when there is a character to read.
+            windows.WaitForSingleObject(handle, 1000) catch |err| switch (err) {
+                windows.WaitForSingleObjectError.WaitTimeOut => return false,
+                windows.WaitForSingleObjectError.WaitAbandoned => return false,
+                windows.WaitForSingleObjectError.Unexpected => return false,
+            };
+            return c._kbhit() != 0;
         },
         else => return false,
     }
