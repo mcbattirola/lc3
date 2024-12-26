@@ -1,12 +1,6 @@
 .{
     .name = "lc3zig",
     .version = "0.0.0",
-    .dependencies = .{
-        .@"raylib-zig" = .{
-            .url = "git+https://github.com/Not-Nik/raylib-zig?ref=devel#de8c2d458516fc971f0859c4473e3381767d2471",
-            .hash = "122058d3ea6318efb819d0bffba630afd1a459fa3a99b4bfe4b680a937d5de04d2fc",
-        },
-    },
     .paths = .{
         "build.zig",
         "build.zig.zon",

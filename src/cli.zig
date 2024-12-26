@@ -8,7 +8,6 @@ const help =
     \\ Options:
     \\  -h, --help                  Display this help
     \\  -r <file>, --rom <file>     Runs the ROM file (required)
-    \\  -w, --window                Opens a debug window
     \\
 ;
 
@@ -16,7 +15,6 @@ const err_msg = "run `lc3 --help` to see all options";
 
 pub const Params = struct {
     rom: []const u16 = undefined,
-    window: bool = false,
 };
 
 pub const ParamsError = error{
@@ -40,10 +38,6 @@ pub fn parseParams(allocator: std.mem.Allocator) !Params {
             const file_path = args.next() orelse return error.InvalidArgument;
             params.rom = try readRom(file_path, allocator);
             rom_init = true;
-            continue;
-        }
-        if (std.mem.eql(u8, arg, "-w") or std.mem.eql(u8, arg, "--window")) {
-            params.window = true;
             continue;
         }
     }
