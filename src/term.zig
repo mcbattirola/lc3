@@ -11,12 +11,13 @@ pub const TerminalState = union(enum) {
     windows: u32,
 };
 
-pub fn disableInputBuffering(input: *anyopaque) TerminalState {
+pub fn disableInputBuffering(allocator: std.mem.Allocator) !TerminalState {
     var terminal_state: TerminalState = .none;
     switch (builtin.os.tag) {
         .linux => {
-            const st = try disableInputBufferingLinux(input);
-            terminal_state = TerminalState{ .linux = st };
+            const input = try openInputTTY(allocator);
+            var st = try disableInputBufferingLinux(input);
+            terminal_state = TerminalState{ .linux = &st };
         },
         .windows => {
             const st = disableInputBufferingWindows();
@@ -71,10 +72,11 @@ pub fn openInputTTY(allocator: std.mem.Allocator) !*std.fs.File {
     return p;
 }
 
-pub fn setTermState(st: TerminalState) void {
+pub fn setTermState(st: TerminalState, allocator: std.mem.Allocator) void {
     switch (builtin.os.tag) {
         .linux => {
-            setAttr(st.linux);
+            const input = openInputTTY(allocator) catch unreachable;
+            setAttr(input, st.linux);
         },
         .windows => {
             const in = windows.GetStdHandle(windows.STD_INPUT_HANDLE) catch unreachable;

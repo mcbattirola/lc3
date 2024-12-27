@@ -19,18 +19,8 @@ pub fn main() !void {
     std.mem.copyForwards(u16, vm.memory[0..params.rom.len], params.rom);
 
     // set terminal mode
-    const input = switch (builtin.os.tag) {
-        .linux => term.openInputTTY(arena),
-        .windows => |_| blk: {
-            const windows = std.os.windows;
-            const handle = try windows.GetStdHandle(windows.STD_INPUT_HANDLE);
-            break :blk handle;
-        },
-        else => @panic("unsupported platform"),
-    };
-
-    const original_state = term.disableInputBuffering(input);
-    defer term.setTermState(original_state);
+    const original_state = try term.disableInputBuffering(arena);
+    defer term.setTermState(original_state, arena);
 
     if (builtin.os.tag == .linux) {
         const sa = std.os.linux.Sigaction{ .handler = .{
